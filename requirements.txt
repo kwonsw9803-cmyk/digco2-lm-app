@@ -1,6 +1,11 @@
-streamlit
-pandas
-openpyxl
-scikit-learn
-joblib
-matplotlib
+# Tested on Python 3.14 (Streamlit Community Cloud default).
+# scikit-learn must match the version the model pickle was saved with; see README "Model note".
+streamlit==1.67.0
+pandas==3.1.1
+numpy==2.5.5
+openpyxl==3.1.5
+scikit-learn==1.9.1
+scipy==1.18.1
+joblib==1.6.0
+altair==6.3.0
+google-genai==3.6.1
