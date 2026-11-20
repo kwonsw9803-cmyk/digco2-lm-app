@@ -326,7 +326,8 @@ def normalize_descriptor_row(desc_df, additive):
 
     def g(col, default="Not reported"):
         if col in r.index and pd.notna(r[col]):
-            return r[col]
+            v = r[col]
+            return v.item() if hasattr(v, "item") else v  # numpy scalar -> Python (st.json shows np.int64 as text)
         return default
 
     return {
