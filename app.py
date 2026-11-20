@@ -164,14 +164,29 @@ st.markdown(
 # Helper functions
 # ============================================================
 
+def file_stamp(path):
+    """(mtime, size) of a file. Part of every cache key below, so a redeploy that changes a data file
+    reloads it instead of serving the copy cached by the still-running app."""
+    stat = Path(path).stat()
+    return stat.st_mtime_ns, stat.st_size
+
+
 @st.cache_data
-def load_excel_sheet(file_path, sheet_name):
+def _read_excel_sheet(file_path, sheet_name, stamp):
     return pd.read_excel(file_path, sheet_name=sheet_name, engine="openpyxl")
 
 
+def load_excel_sheet(file_path, sheet_name):
+    return _read_excel_sheet(str(file_path), sheet_name, file_stamp(file_path))
+
+
 @st.cache_resource
-def load_model(model_path):
+def _load_model(model_path, stamp):
     return joblib.load(model_path)
+
+
+def load_model(model_path):
+    return _load_model(str(model_path), file_stamp(model_path))
 
 
 def file_status(path):
@@ -206,7 +221,6 @@ LIVE_GEMINI_LIMIT_PER_SESSION = 5
 OTHER_LM_LABEL = "Other (not in training data)"
 
 
-@st.cache_data
 def training_categories(column):
     """Category values the classifier actually saw during training (Step4 ML_ready_dataset)."""
     if not step4_file.exists():
@@ -380,10 +394,14 @@ def make_condition_for_model(
 
 
 @st.cache_resource
-def get_retriever():
+def _build_retriever(stamp):
     core = load_excel_sheet(descriptor_file, "Core_database")
     mech = load_excel_sheet(descriptor_file, "Mechanism_notes")
     return rag_mod.Retriever(rag_mod.build_corpus(core, mech))
+
+
+def get_retriever():
+    return _build_retriever(file_stamp(descriptor_file))
 
 
 def predict_condition(condition):
