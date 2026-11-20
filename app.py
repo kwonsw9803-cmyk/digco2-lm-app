@@ -649,7 +649,7 @@ elif page == "Platform Workflow":
     st.dataframe(
         pd.DataFrame(
             [
-                ("Literature database", "Available", "18 curated records with source links"),
+                ("Literature database", "Available", "24 curated records with source links"),
                 ("Element descriptors + screening map", "Available", "Similarity heuristic, not an activity model"),
                 ("Computational data (DFT/AIMD)", "Schema ready", "Records are added after review; session upload available"),
                 ("Descriptor regression", "Available when data exist", "Needs ≥5 solutes per property"),

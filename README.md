@@ -8,7 +8,7 @@ data → model → prediction → validation → feedback.
 
 | Page | What it does |
 |---|---|
-| Database | 18 curated literature records with source links, plus curated experimental feedback |
+| Database | 24 curated literature records with source links, plus curated experimental feedback |
 | Descriptor Explorer / Screening | Element descriptors; descriptor map and similarity ranking of untested additives |
 | Computational Data | DFT/AIMD records (`data/computational_data.csv`), session-only CSV upload, LOOCV descriptor regression |
 | ML Prediction | Preliminary product-class classifier, shown against a majority-class baseline |
@@ -29,6 +29,13 @@ Live Gemini calls are limited to 5 per browser session.
 
 ## Data files
 
+- Literature records live in `Final_LM_CO2_platform_database_with_descriptors.xlsx` (Core_database,
+  Normalized_database, Mechanism_notes) and `Step3_LM_CO2_database_analysis.xlsx` (Analyzed_database and its count
+  sheets). Add records with `python scripts/add_literature_records.py <additions.json>`: it appends to every sheet,
+  refreshes the derived sheets, and skips DOIs already present. Records 19–24 were added on 2026-11-20 from
+  abstracts (`data/review/literature_additions_2026-11-20.json`; screening of all candidates in
+  `data/review/literature_candidates_2026-11-20.csv`). `Step4_ML_ready_dataset.xlsx` and the model still use the
+  original 18 records until the classifier is retrained.
 - `data/computational_data.csv`: one computed property per row (`Solute`, `Property`, `Value`, `Unit`, ...).
   Download the template from the Computational Data page. Only published or public data belongs here.
   The current rows are 0 K bulk formation energies from the Open Quantum Materials Database (CC BY 4.0),
