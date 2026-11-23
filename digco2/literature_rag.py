@@ -2,7 +2,7 @@
 
 Retrieval is TF-IDF (word + character n-grams so formulas like 'GaInSn' or
 'Ga2O3' match) over one document per record built from Core_database and
-Mechanism_notes. Evidence is always shown; when a Gemini key is configured the
+Mechanism_notes. Evidence is always shown; when Claude is connected the
 LLM writes an answer that may only use the retrieved records and must cite them
 as [R<id>].
 """

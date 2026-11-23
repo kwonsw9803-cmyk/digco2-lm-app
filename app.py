@@ -6,16 +6,12 @@ import joblib
 import pandas as pd
 import streamlit as st
 
+from digco2 import claude_client
 from digco2 import computational as comp_mod
 from digco2 import feedback as fb_mod
 from digco2 import literature_rag as rag_mod
 from digco2 import screening as scr_mod
 from digco2 import plots as plot_mod
-
-try:
-    from google import genai
-except Exception:
-    genai = None
 
 
 # ============================================================
@@ -32,7 +28,7 @@ st.set_page_config(
 
 base_dir = Path(__file__).parent
 
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.4.0"
 
 # ------------------------------------------------------------
 # File paths
@@ -247,8 +243,11 @@ def get_setting(name, default=None):
 
 
 ADMIN_MODE = get_setting("DIGCO2_ADMIN", "0") == "1"
-GEMINI_MODEL = get_setting("GEMINI_MODEL", "gemini-2.5-flash")
-LIVE_GEMINI_LIMIT_PER_SESSION = 5
+CLAUDE = claude_client.Settings.load(get_setting)
+LIVE_CLAUDE_LIMIT_PER_SESSION = 5
+CLAUDE_NOT_CONNECTED = (
+    "Claude is not connected on this app yet, so nothing is sent to the Claude API. "
+)
 OTHER_LM_LABEL = "Other (not in training data)"
 
 
@@ -395,30 +394,38 @@ def render_footer():
     )
 
 
-def get_gemini_client():
-    api_key = get_setting("GEMINI_API_KEY")
-    if not api_key:
-        return None, "GEMINI_API_KEY was not found in Streamlit secrets or environment variables."
-    if genai is None:
-        return None, "google-genai package is not installed or could not be imported."
+@st.cache_resource
+def claude_daily_limit():
+    """Shared by every visitor of this app process (a page refresh does not reset it)."""
     try:
-        return genai.Client(api_key=api_key), None
-    except Exception as e:
-        return None, str(e)
+        limit = int(get_setting("CLAUDE_DAILY_LIMIT", "30"))
+    except ValueError:
+        limit = 30
+    return claude_client.DailyLimit(max(limit, 0))
 
 
-def call_gemini(prompt, model_name=GEMINI_MODEL):
-    client, error = get_gemini_client()
-    if error:
-        return f"Gemini client error: {error}"
-    try:
-        response = client.models.generate_content(
-            model=model_name,
-            contents=prompt,
-        )
-        return response.text
-    except Exception as e:
-        return f"Gemini API call failed: {e}"
+def claude_block_reason():
+    """Why a live Claude call is not possible right now, or None."""
+    problem = CLAUDE.problem()
+    if problem:
+        # Configuration details are for the maintainer; visitors only see that Claude is off.
+        return problem if ADMIN_MODE else claude_client.OFF
+    if st.session_state.get("live_claude_calls", 0) >= LIVE_CLAUDE_LIMIT_PER_SESSION:
+        return "The live Claude limit for this session has been reached."
+    if claude_daily_limit().remaining() <= 0:
+        return "The app's daily Claude limit has been reached. Please come back tomorrow."
+    return None
+
+
+def call_claude(prompt):
+    """One live call, counted against the session and the app-wide daily limit."""
+    reason = claude_block_reason()
+    if reason:
+        return claude_client.Reply(False, reason)
+    if not claude_daily_limit().take():
+        return claude_client.Reply(False, "The app's daily Claude limit has been reached. Please come back tomorrow.")
+    st.session_state["live_claude_calls"] = st.session_state.get("live_claude_calls", 0) + 1
+    return claude_client.ask(prompt, CLAUDE)
 
 
 def normalize_descriptor_row(desc_df, additive):
@@ -524,7 +531,7 @@ def predict_condition(condition):
     return pred, prob_df
 
 
-def build_gemini_prompt_from_candidate(row):
+def build_candidate_prompt(row):
     lm = row.get("Liquid_metal_clean_for_ML", "Not reported")
     additive = row.get("Additive_element_for_descriptor", "Not reported")
     reaction = row.get("Reaction_type_for_ML", "Not reported")
@@ -587,7 +594,7 @@ pages = [
     "Recommendation Agent",
     "Literature Agent",
     "Gemini Agent Report",
-    "Live Gemini Generator",
+    "Live Claude Generator",
     "Experimental Feedback",
 ]
 if ADMIN_MODE:
@@ -618,7 +625,7 @@ if page == "Home":
             <p>
             An AI-enabled digital catalysis platform for liquid-metal-mediated CO₂ conversion.
             The platform integrates literature-mined databases, elemental descriptors,
-            machine-learning product classification, and Gemini-powered recommendation reports.
+            machine-learning product classification, and LLM-written recommendation reports.
             </p>
             <span class="pill">Liquid metals</span>
             <span class="pill">CO₂ conversion</span>
@@ -734,7 +741,7 @@ elif page == "Platform Workflow":
     with cols[1]:
         st.markdown('<div class="arrow">→</div>', unsafe_allow_html=True)
     with cols[2]:
-        st.markdown('<div class="workflow-box"><b>6. Gemini</b><br>Experimental planning and interpretation</div>', unsafe_allow_html=True)
+        st.markdown('<div class="workflow-box"><b>6. LLM report</b><br>Experimental planning and interpretation</div>', unsafe_allow_html=True)
     with cols[3]:
         st.markdown('<div class="arrow">→</div>', unsafe_allow_html=True)
     with cols[4]:
@@ -762,7 +769,7 @@ elif page == "Platform Workflow":
                 ("Computational data (DFT/AIMD)", "Schema ready", "Records are added after review; session upload available"),
                 ("Descriptor regression", "Available when data exist", "Needs ≥5 solutes per property"),
                 ("Product classifier", "Preliminary", "Does not beat the majority-class baseline yet"),
-                ("Literature agent (RAG)", "Available", "Answers only from curated records; Gemini optional"),
+                ("Literature agent (RAG)", "Available", "Retrieves curated records; Claude answers optional (off until connected)"),
                 ("Experimental feedback", "Available", "Pending → maintainer review → curated"),
                 ("Automated literature mining", "Planned", "PDF parsing + LLM extraction with QC curation"),
                 ("ML interatomic potentials", "Planned", "For large-scale molten-surface sampling"),
@@ -1142,6 +1149,7 @@ elif page == "Gemini Agent Report":
     if not step7b_file.exists():
         st.warning("Step7b_Gemini_LLM_agent_report.xlsx not found.")
     else:
+        st.caption("Stored reports, written by Gemini before the app moved to Claude. They are kept as they were generated.")
         render_unvalidated_warning("These stored reports quote those scores.")
         report_df = load_excel_sheet(step7b_file, "Gemini_candidate_reports")
         st.write("LLM reports:", report_df.shape)
@@ -1164,21 +1172,23 @@ elif page == "Gemini Agent Report":
 
 
 # ============================================================
-# Live Gemini Generator
+# Live Claude Generator
 # ============================================================
 
-elif page == "Live Gemini Generator":
-    st.header("✨ Live Gemini Generator")
+elif page == "Live Claude Generator":
+    st.header("✨ Live Claude Generator")
 
-    st.markdown(
-        """
-        <div class="warning-box">
-        This module calls the Gemini API in real time.
-        If the app is publicly shared, API usage may increase.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    if CLAUDE.problem():
+        st.info(CLAUDE_NOT_CONNECTED + "You can still preview the prompt below.")
+    else:
+        st.markdown(
+            """
+            <div class="warning-box">
+            This module calls the Claude API in real time. Each report uses paid API credit.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     if not step6_file.exists():
         st.warning("Step6 recommendation result file not found.")
@@ -1197,25 +1207,39 @@ elif page == "Live Gemini Generator":
             row = top_df.iloc[options.index(selected)]
 
             render_unvalidated_warning("The prompt below quotes those scores.")
-            prompt = build_gemini_prompt_from_candidate(row)
-            st.caption(f"Model: {GEMINI_MODEL} (set GEMINI_MODEL in secrets to change)")
+            prompt = build_candidate_prompt(row)
+            st.caption(f"Model: {CLAUDE.model}")
 
             with st.expander("Prompt preview"):
                 st.code(prompt)
 
-            used = st.session_state.get("live_gemini_calls", 0)
-            remaining = LIVE_GEMINI_LIMIT_PER_SESSION - used
-            st.caption(
-                f"Live Gemini calls left in this session: {remaining} / {LIVE_GEMINI_LIMIT_PER_SESSION} "
-                "(shared with the Literature Agent)"
-            )
+            blocked = claude_block_reason()
+            if st.button("Generate live Claude report", disabled=blocked is not None):
+                with st.spinner("Calling the Claude API..."):
+                    reply = call_claude(prompt)
+                if reply.ok:
+                    # Kept for the session so that a later click does not discard a paid report.
+                    st.session_state["claude_report"] = (selected, reply)
+                else:
+                    st.warning(reply.text)
 
-            if st.button("Generate live Gemini report", disabled=remaining <= 0):
-                st.session_state["live_gemini_calls"] = used + 1
-                with st.spinner("Calling Gemini API..."):
-                    report = call_gemini(prompt)
+            if not CLAUDE.problem():
+                remaining = max(LIVE_CLAUDE_LIMIT_PER_SESSION - st.session_state.get("live_claude_calls", 0), 0)
+                st.caption(
+                    f"Live Claude calls left in this session: {remaining} / {LIVE_CLAUDE_LIMIT_PER_SESSION} "
+                    "(shared with the Literature Agent)"
+                )
+                if blocked:
+                    st.warning(blocked)
+            elif ADMIN_MODE:
+                st.caption(blocked)
+
+            if "claude_report" in st.session_state:
+                candidate, reply = st.session_state["claude_report"]
                 st.subheader("Generated report")
-                st.markdown(report)
+                st.caption(f"Candidate {candidate}")
+                st.markdown(reply.text)
+                st.caption(f"Written by {reply.model}. Check every claim against the literature before using it.")
 
 
 # ============================================================
@@ -1408,7 +1432,7 @@ elif page == "Literature Agent":
     st.header("📚 Literature Agent")
     st.markdown(
         "Ask about mechanisms, conditions or products. The agent retrieves the most relevant curated records "
-        "and, if Gemini is configured, writes an answer that may only use those records and cites them as [R#]."
+        "and, when Claude is connected, writes an answer that may only use those records and cites them as [R#]."
     )
 
     if not descriptor_file.exists():
@@ -1439,19 +1463,15 @@ elif page == "Literature Agent":
                             st.markdown(f"**[R{h.Record_ID}] {h.Title}** ({h.Year or 'n.d.'}) · score {h.Score:.2f}{link}")
                             st.caption(h.Text.replace("\n", " · "))
 
-                    used = st.session_state.get("live_gemini_calls", 0)
-                    client, err = get_gemini_client()
-                    if err:
-                        answer = (
-                            "Gemini is not configured, so here are the most relevant records: "
-                            + ", ".join(f"[R{h.Record_ID}] {h.Title}" for h in hits.itertuples())
+                    blocked = claude_block_reason()
+                    if blocked:
+                        answer = f"{blocked} Here are the most relevant records: " + ", ".join(
+                            f"[R{h.Record_ID}] {h.Title}" for h in hits.itertuples()
                         )
-                    elif used >= LIVE_GEMINI_LIMIT_PER_SESSION:
-                        answer = "The live Gemini limit for this session has been reached. The retrieved records are listed above."
                     else:
-                        st.session_state["live_gemini_calls"] = used + 1
                         with st.spinner("Writing a grounded answer..."):
-                            answer = call_gemini(rag_mod.build_prompt(question, hits, history))
+                            reply = call_claude(rag_mod.build_prompt(question, hits, history))
+                        answer = reply.text if reply.ok else f"{reply.text} The retrieved records are listed above."
                     st.markdown(answer)
 
             history.append({"role": "user", "content": question})
@@ -1654,11 +1674,12 @@ elif page == "File Status":
     st.subheader("Base directory")
     st.code(str(base_dir))
 
-    st.subheader("Gemini API environment")
-    if get_setting("GEMINI_API_KEY"):
-        st.success("GEMINI_API_KEY is available.")
+    st.subheader("Claude API")
+    problem = CLAUDE.problem()
+    if problem:
+        st.warning(problem)
     else:
-        st.warning("GEMINI_API_KEY is not available.")
+        st.success(f"Connected: {CLAUDE.model}, {claude_daily_limit().remaining()} calls left today.")
 
 
 render_footer()

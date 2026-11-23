@@ -13,19 +13,24 @@ data → model → prediction → validation → feedback.
 | Computational Data | DFT/AIMD records (`data/computational_data.csv`), session-only CSV upload, LOOCV descriptor regression |
 | ML Prediction | Preliminary product-class classifier, shown against a majority-class baseline |
 | Recommendation Agent | Pre-computed candidate ranking (Step 6) |
-| Literature Agent | TF-IDF retrieval over the records + Gemini answer citing records as [R#] |
-| Gemini Agent Report / Live Gemini Generator | Stored and live LLM reports per candidate |
+| Literature Agent | TF-IDF retrieval over the records + optional Claude answer citing records as [R#] |
+| Gemini Agent Report / Live Claude Generator | Stored reports (written by Gemini) / live Claude reports per candidate |
 | Experimental Feedback | Submit a result, compare with the model, save as pending for review |
 
 ## Secrets (Streamlit Cloud → App settings → Secrets)
 
 ```toml
-GEMINI_API_KEY = "..."          # optional; enables Literature Agent answers and live reports
-GEMINI_MODEL = "gemini-2.5-flash"  # optional
+CLAUDE_ENABLED = "0"             # "1" connects Claude; with "0" (default) no call is made even if a key is present
+ANTHROPIC_API_KEY = "..."        # needed only when CLAUDE_ENABLED = "1"; never commit it
+CLAUDE_MODEL = "claude-opus-5-5" # optional; also claude-sonnet-5-5 or claude-haiku-5-5
+CLAUDE_DAILY_LIMIT = "30"        # optional; calls per UTC day for the whole app
 DIGCO2_ADMIN = "0"               # "1" shows File Status and pending feedback (do not enable on the public app)
 ```
 
-Live Gemini calls are limited to 5 per browser session.
+Claude is **off by default**. When connected, live calls are limited to 5 per browser session and
+`CLAUDE_DAILY_LIMIT` per day for the whole app. The daily counter lives in memory and restarts with the app, so
+set a spend limit in the Anthropic Console as well: that is the only hard cap. API usage is billed separately from
+Claude Pro/Max subscriptions.
 
 ## Data files
 
