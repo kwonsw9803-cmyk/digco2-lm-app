@@ -1,10 +1,19 @@
 import json
 import os
+import sys
 from pathlib import Path
 
 import joblib
 import pandas as pd
 import streamlit as st
+
+import digco2
+
+# A push to Streamlit Cloud replaces files under a running process, which keeps the modules it has already imported.
+# Drop ours when one of their files is newer than the import, so that app.py never runs against old modules.
+if max(f.stat().st_mtime for f in Path(__file__).parent.glob("digco2/*.py")) > getattr(digco2, "LOADED_AT", 0):
+    for name in [m for m in sys.modules if m == "digco2" or m.startswith("digco2.")]:
+        sys.modules.pop(name, None)
 
 from digco2 import claude_client
 from digco2 import computational as comp_mod
