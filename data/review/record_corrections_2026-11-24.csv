@@ -1,0 +1,33 @@
+﻿Record_ID,Table,Column,Old,New,Page,Reason,Mode
+1,Core,Reaction_time_h,0.5 h sonication; >100 h stability test reported,5 h reference runs (bath sonication); 24 h with an overhead stirrer; >100 h stability test reported. The 0.5 h stored before is the probe sonication that prepares the catalyst.,"p2, p9","0.5 h is the catalyst preparation, not the reaction.",replace value
+1,Normalized,Reaction_time_h_value,0.5,5,p9,"0.5 h is the catalyst preparation, not the reaction.",replace value
+1,Normalized,Reaction_time_note,0.5 h sonication; >100 h stability test reported,5 h reference runs (bath sonication); 24 h with an overhead stirrer; >100 h stability test reported. The 0.5 h stored before is the probe sonication that prepares the catalyst.,"p2, p9",Same.,replace value
+7,Core,CO2_feed,CO2 flow 600 mL/h,CO2 flow 10 mL/min (600 mL/h) for the rate; 0.35 mL/min for the 96% conversion,"p8, p9, p10","96% was measured at 0.35 mL/min, not at 10 mL/min.",replace value
+7,Core,CO2_conversion_%,96,96 (at 0.35 mL/min),p8,Same.,replace value
+7,Normalized,CO2_feed,CO2 flow 600 mL/h,CO2 flow 10 mL/min (600 mL/h) for the rate; 0.35 mL/min for the 96% conversion,"p8, p9, p10",Same.,replace value
+7,Normalized,Flow_rate_mL_min,10,10 (rate); 0.35 (conversion),"p8, p9",One number would pair the 96% with the wrong flow.,replace value
+7,Normalized,Data_notes,CO2 feed converted from 600 mL/h to 10 mL/min.,"CO2 feed converted from 600 mL/h to 10 mL/min. The 96% is given at 0.35 mL/min, next to a CO2 adsorption of 72%, so what it refers to is unclear; the 2598.7 umol/h is taken to belong to the 600 mL/h of the methods section. The conclusion of the paper pairs 600 mL/h with 96% (corrected 2026-11-24).","p8, p9, p10",Same.,replace value
+11,Core,Voltage_or_current,Onset potential -310 mV vs CO2/C,Applied -1.8 to -2.0 V vs Ag/Ag+; onset potential -310 mV vs CO2/C,"p1, p4",The stored voltage was the onset.,replace value
+11,Normalized,Voltage_V,-0.31,-2,"p4, p7",The stored voltage was the onset. -2.0 V is the electrolysis potential within the -1.8 to -2.0 V range.,replace value
+11,Normalized,Reference_electrode,CO2/C,Ag/Ag+,p7,Goes with the applied potential.,replace value
+11,Normalized,Data_notes,,"Voltage is the applied potential (range -1.8 to -2.0 V). The onset, -0.31 V vs CO2/C, was stored here until 2026-11-24.","p1, p4",Same.,replace value
+12,Core,Voltage_or_current,V-EGaIn onset potential -0.97 V vs Ag/Ag+,Applied -2.4 V vs Ag/Ag+ (V-EGaIn); onset potential -0.97 V vs Ag/Ag+,"p2, p4",The stored voltage was the onset.,replace value
+12,Normalized,Voltage_V,-0.97,-2.4,"p2, p4",The stored voltage was the onset.,replace value
+12,Normalized,Data_notes,,"Voltage is the applied potential. The onset, -0.97 V vs Ag/Ag+, was stored here until 2026-11-24. Class kept as solid carbon (2026-11-24): it is the only product measured, 5.6% of the charge; the rest was not measured.","p2, p4, p5",Same; class decision of the maintainer.,replace value
+14,Core,Main_product,Graphitic carbon / solid carbon,CO in dry electrolyte; formate and CO with 2 M water; solid carbon below 5% (authors' estimate),"p5 Table 1, p7",Main product by efficiency is not solid carbon.,replace value
+14,Core,Voltage_or_current,Example condition -2.6 V vs Ag/AgNO3,"-3.0 V vs Ag/AgNO3 (product analysis, 1 h); -2.6 V (runs of more than 16 h)","p5, p6",The products were measured at -3.0 V.,replace value
+14,Core,FE_%,Not fully extracted,"Dry: CO 93, formate 3.0, oxalate 1.5, H2 0.7. With 2 M water: formate 46.8, CO 36.9, H2 21.0, oxalate 0.35",p5 Table 1,Table 1.,replace value
+16,Normalized,Voltage_V,plasma discharge; later -1.4,Not applicable,"p2, p3, p8","-1.4 V belongs to the later nitrate reduction, not to CO2 conversion.",replace value
+16,Normalized,Reference_electrode,Ag/AgCl for nitrate reduction,Not applicable,p8,Same.,replace value
+16,Normalized,Data_notes,,CO2 conversion is plasma driven. The -1.4 V vs Ag/AgCl and the 20 h stability stored here until 2026-11-24 belong to the later nitrate reduction.,"p2, p8",Same.,replace value
+16,Core,Stability_h,20 h nitrate reduction stability reported for derived electrode,Not reported,p8,"20 h is the nitrate reduction run, not CO2 conversion.",replace value
+16,Normalized,Stability_h_value,20,Not reported,p8,Same.,replace value
+16,Normalized,Stability_note,20 h nitrate reduction stability reported for derived electrode,Not reported,p8,Same.,replace value
+24,Core,Voltage_or_current,-1.6 V vs RHE (about 15x higher current density with optimized bubbling),"-1.6 V vs Ag/AgCl (about 15x higher current density with optimized bubbling); the abstract says RHE, the text and figures Ag/AgCl",sections 2 and 3,The reference electrode in the abstract differs from the text and figures.,replace value
+24,Normalized,Reference_electrode,RHE,Ag/AgCl,sections 2 and 3,Same.,replace value
+19,Normalized,Data_notes,Extracted from the abstract only; full text not checked.,Extracted from the abstract; the full text was read later for the Conditions and Products sheets.,,Note only: the full text has been read since.,replace sentence
+20,Normalized,Data_notes,Extracted from the abstract only; full text not checked.,Extracted from the abstract; the full text was read later for the Conditions and Products sheets.,,Note only: the full text has been read since.,replace sentence
+21,Normalized,Data_notes,Extracted from the abstract only; full text not checked.,Extracted from the abstract; the full text was read later for the Conditions and Products sheets.,,Note only: the full text has been read since.,replace sentence
+22,Normalized,Data_notes,Extracted from the abstract only; full text not checked.,Extracted from the abstract; the full text was read later for the Conditions and Products sheets.,,Note only: the full text has been read since.,replace sentence
+23,Normalized,Data_notes,Extracted from the abstract only; full text not checked.,Extracted from the abstract; the full text was read later for the Conditions and Products sheets.,,Note only: the full text has been read since.,replace sentence
+24,Normalized,Data_notes,Extracted from the abstract only; full text not checked.,Extracted from the abstract; the full text was read later for the Conditions and Products sheets.,,Note only: the full text has been read since.,replace sentence

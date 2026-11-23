@@ -1,0 +1,67 @@
+﻿Condition_ID,Record_ID,Condition,Product,Metric,Value,Value_to,Unit,Qualifier,Uncertainty,Evidence,Method,Basis,Page,Note
+R01-1,1,"reference runs, bath sonication",solid carbon,production rate,4.95,,mg/h,,,measured,TGA,published paper,p2,"Carbonaceous materials, 20 mL reactor."
+R01-1,1,"reference runs, bath sonication",O2,production rate,,,,,,stated without a number,GC,published paper,p8,Presence confirmed by GC; amount in the supporting information.
+R01-3,1,"20 mL reactor, DMF + ethanolamine",solid carbon,production rate,7.95,,mg/h,,,measured,TGA,published paper,p3,Carbonaceous materials.
+R01-3,1,"20 mL reactor, DMF + ethanolamine",CO,production rate,0.952,,mmol/h,,,measured,,published paper,p3,9.52 x 10^-4 mol (22.2 cm3) in 1 h.
+R02-1,2,"0.5 wt% Na-Ga, 600 C",CO,gas composition,0.33,,%,,,measured,GC,published paper,"p2, p3",Basis of the percentage not stated. No CO at lower temperatures.
+R03-1,3,GT2 (0.8Ga-0.2Te),gaseous products,gas composition,,,,,,not detected,GC,published paper,"p6, p9",The outlet contained only CO2.
+R03-4,3,SB1 (0.6Sn-0.4Bi),gaseous products,gas composition,,,,,,not detected,GC,published paper,"p6, p9",The outlet contained only CO2.
+R04-1,4,"water-free, potential series",CO,Faradaic efficiency,80,,%,greater than,,measured,GC,published paper,p26,
+R04-1,4,"water-free, potential series",H2,Faradaic efficiency,,,,,,stated without a number,GC,published paper,p23,Very low; attributed to atmospheric water (Fig. 5 caption).
+R04-1,4,"water-free, potential series",solid carbon,Faradaic efficiency,,,,,,not detected,,published paper,"p4, p37",The thesis could not reproduce solid carbon formation.
+R04-2,4,with 2 M water,H2,Faradaic efficiency,,,,,,stated without a number,GC,published paper,p26,Takes much of the current.
+R04-2,4,with 2 M water,CO,Faradaic efficiency,,,,,,stated without a number,GC,published paper,p26,Much lower efficiency than without water.
+R09-1,9,syringe reactor,CO,gas composition,3,,vol%,,,measured,GC,published paper,p2,Of the gas remaining after the reaction.
+R10-1,10,"bubble column, 200 C",solid carbon,selectivity,100,,%,,,measured,,published paper,p3,Below about 400 C; above it CO appears (reverse Boudouard). How the selectivity was obtained is not stated in the main text.
+R11-2,11,Galinstan + 3 wt% Ce,solid carbon,Faradaic efficiency,75,,%,"approx., upper estimate",,by difference,100% minus gases by GC,published paper,"p4, p7",Not weighed. Over -1.8 to -2.0 V. A sum with CO and H2 is 100% by construction.
+R11-2,11,Galinstan + 3 wt% Ce,H2,Faradaic efficiency,,,,,,"measured, shown only in a figure",GC,published paper,"p3, p4",Moderate quantities (Fig. 1c).
+R11-2,11,Galinstan + 3 wt% Ce,CO,Faradaic efficiency,,,,,,"measured, shown only in a figure",GC,published paper,"p3, p4",Becomes dominant at more negative potentials (Fig. 1c).
+R11-2,11,Galinstan + 3 wt% Ce,liquid products,Faradaic efficiency,,,,,,not detected,NMR,published paper,"p4, p7",
+R12-2,12,"V-EGaIn, carbon efficiency",solid carbon,Faradaic efficiency,5.6,,%,,,measured,weighed residue and EDS,published paper,p4,120 mg residue x 77%. The text calls 77 an atomic percentage but uses it as a mass fraction; see ESI Table S1.
+R12-2,12,"V-EGaIn, carbon efficiency",H2,Faradaic efficiency,,,,,,suggested by citation,,published paper,p5,No gas analysis in the main text. Cited source: record 11.
+R12-2,12,"V-EGaIn, carbon efficiency",C2+ products,Faradaic efficiency,,,,,,suggested by citation,,published paper,p5,No gas or liquid analysis in the main text. The cited source (record 11) reports CO and H2 and no liquid products.
+R13-1,13,2 M water,formic acid,Faradaic efficiency,60,,%,approx.,,measured,IC,published paper,p1,Near the detection limit of the method (p5).
+R13-1,13,2 M water,CO,Faradaic efficiency,30,,%,approx.,,measured,GC,published paper,p1,
+R13-1,13,2 M water,H2,Faradaic efficiency,,,,,,stated without a number,GC,published paper,p1,Minor side product.
+R13-2,13,"anhydrous, -2.4 V",CO,Faradaic efficiency,100,,%,approx.,,measured,GC,published paper,p5,
+R13-3,13,"anhydrous, -2.7 V",CO,Faradaic efficiency,30,,%,approx.,,measured,GC,published paper,p5,Sole product found. The rest is attributed to electrolyte decomposition.
+R13-2,13,"anhydrous, -2.4 V",other products,Faradaic efficiency,,,,,,not detected,GC and IC,published paper,p5,CO is the sole product at all applied potentials.
+R13-3,13,"anhydrous, -2.7 V",other products,Faradaic efficiency,,,,,,not detected,GC and IC,published paper,p5,CO is the sole product at all applied potentials.
+R14-1,14,"dry electrolyte, 1 h",CO,Faradaic efficiency,93,,%,,1.3,measured,GC,published paper,"p5, p7",Table 1.
+R14-1,14,"dry electrolyte, 1 h",formate,Faradaic efficiency,3.0,,%,,0.5,measured,IC,published paper,"p5, p7",Table 1.
+R14-1,14,"dry electrolyte, 1 h",oxalate,Faradaic efficiency,1.5,,%,,0.2,measured,IC,published paper,"p5, p7",Table 1.
+R14-1,14,"dry electrolyte, 1 h",H2,Faradaic efficiency,0.7,,%,,0.9,measured,GC,published paper,"p5, p7",Table 1.
+R14-1,14,"dry electrolyte, 1 h",solid carbon,Faradaic efficiency,5,,%,less than,,authors' estimate,,published paper,p7,Not measured; the authors call a value below 5% plausible for these 1 h runs.
+R14-2,14,"2 M water, 1 h",formate,Faradaic efficiency,46.8,,%,,4.1,measured,IC,published paper,"p5, p7",Table 1.
+R14-2,14,"2 M water, 1 h",CO,Faradaic efficiency,36.9,,%,,1.2,measured,GC,published paper,"p5, p7",Table 1.
+R14-2,14,"2 M water, 1 h",H2,Faradaic efficiency,21.0,,%,,1.3,measured,GC,published paper,"p5, p7",Table 1.
+R14-2,14,"2 M water, 1 h",oxalate,Faradaic efficiency,0.35,,%,,0.1,measured,IC,published paper,"p5, p7",Table 1.
+R14-2,14,"2 M water, 1 h",solid carbon,Faradaic efficiency,5,,%,less than,,authors' estimate,,published paper,p7,Not measured; the authors call a value below 5% plausible for these 1 h runs.
+R19-1,19,"Ga83.2In16.8, 300 mL/min",formate,Faradaic efficiency,98,,%,,,measured,NMR (identity),published paper,p8,Sole liquid product by NMR.
+R19-2,19,"Ga83.2In16.8, warm",formate,Faradaic efficiency,68,,%,,,measured,NMR (identity),published paper,p8,Falls from 98 to 68% on warming; whether this is 35 or 45 C is in Fig. 4F.
+R19-3,19,"Ga73.6In26.4, 45 C",formate,Faradaic efficiency,96,,%,up to,,measured,NMR (identity),published paper,p8,
+R19-4,19,"Ga83.2In16.8, -1.70 V",formate,Faradaic efficiency,75,,%,,,measured,NMR (identity),published paper,p8,
+R19-5,19,"Ga90.3In9.7, -1.70 V",formate,Faradaic efficiency,68,,%,,,measured,NMR (identity),published paper,p8,
+R20-1,20,"Ga0.75In0.25, H-cell",formate,Faradaic efficiency,82,,%,maximum,,measured,IC,published paper,p4,Average 72% over 12 h.
+R20-1,20,"Ga0.75In0.25, H-cell",CO,Faradaic efficiency,,,,,,"measured, shown only in a figure",GC,published paper,p4,Fig. 3b.
+R20-1,20,"Ga0.75In0.25, H-cell",H2,Faradaic efficiency,,,,,,"measured, shown only in a figure",GC,published paper,p4,Fig. 3b.
+R20-2,20,"Ga0.75In0.25, flow cell",formate,Faradaic efficiency,78,,%,,,measured,IC,published paper,p5,
+R20-2,20,"Ga0.75In0.25, flow cell",CO,Faradaic efficiency,,,,,,"measured, shown only in a figure",GC,published paper,p4,Fig. 3f.
+R20-2,20,"Ga0.75In0.25, flow cell",H2,Faradaic efficiency,,,,,,"measured, shown only in a figure",GC,published paper,p4,Fig. 3f.
+R20-3,20,"Ga0.90Sn0.10, H-cell",formate,Faradaic efficiency,89,,%,,,measured,IC,published paper,p5,
+R20-5,20,"Ga0.90Sn0.10, flow cell",formate,Faradaic efficiency,80,,%,,,measured,IC,published paper,p5,
+R20-4,20,"Ga particles (no In), H-cell",H2,Faradaic efficiency,40,80,%,,,measured,GC,published paper,p4,Range over the potential window.
+R20-4,20,"Ga particles (no In), H-cell",CO,Faradaic efficiency,10,30,%,approx.,,measured,GC,published paper,p4,Range over the potential window.
+R20-4,20,"Ga particles (no In), H-cell",formate,Faradaic efficiency,15,,%,less than,,measured,IC,published paper,p4,
+R22-1,22,-0.7 V,CO,Faradaic efficiency,29,,%,average,,measured,GC,published paper,p5,
+R22-1,22,-0.7 V,H2,Faradaic efficiency,,,,,,stated as the remainder,GC,published paper,"p4, p5",The text says the rest is H2.
+R22-2,22,-0.9 V,CO,Faradaic efficiency,16.1,,%,mean of 4 time points,,measured,GC,published paper + authors' raw data (CC BY),zenodo.org/records/15194496 Fig. 2A,
+R22-2,22,-0.9 V,H2,Faradaic efficiency,,,,,,stated as the remainder,GC,published paper,"p4, p5",The text says the rest is H2.
+R22-3,22,-1.1 V,CO,Faradaic efficiency,11.5,,%,mean of 4 time points,,measured,GC,published paper + authors' raw data (CC BY),zenodo.org/records/15194496 Fig. 2A,
+R22-3,22,-1.1 V,formate,Faradaic efficiency,1,,%,less than,,measured,HPLC,published paper,p5,
+R22-3,22,-1.1 V,H2,Faradaic efficiency,,,,,,stated as the remainder,GC,published paper,"p4, p5",The text says the rest is H2.
+R23-1,23,three-membrane electrolyzer,CO,Faradaic efficiency,95.29,,%,,2.5,measured,GC,published paper,p6,
+R23-1,23,three-membrane electrolyzer,H2,Faradaic efficiency,,,,,,stated without a number,GC,published paper,p6,Detected; the only other gas.
+R23-2,23,"EGaIn without Ag, -2.4 V",CO,Faradaic efficiency,65.6,,%,,3.0,measured,GC,published paper,p6,
+R23-2,23,"EGaIn without Ag, -2.4 V",H2,Faradaic efficiency,,,,,,stated without a number,GC,published paper,p6,Detected; the only other gas.
+R24-2,24,carbon efficiency runs,solid carbon,Faradaic efficiency,75,,%,greater than,,measured,weighed carbon and XPS,published paper,"p7, p11",Other products were not measured.

@@ -8,6 +8,7 @@ import streamlit as st
 
 from digco2 import claude_client
 from digco2 import computational as comp_mod
+from digco2 import conditions as cond_mod
 from digco2 import feedback as fb_mod
 from digco2 import literature_rag as rag_mod
 from digco2 import screening as scr_mod
@@ -29,7 +30,7 @@ st.set_page_config(
 
 base_dir = Path(__file__).parent
 
-APP_VERSION = "0.5.0"
+APP_VERSION = "0.6.0"
 
 # ------------------------------------------------------------
 # File paths
@@ -107,10 +108,12 @@ def render_unvalidated_warning(extra=""):
     base = ev["18 original records | leave-one-paper-out | baseline"]
     new = ev["deployed_on_new_records"]
     hits = sum(r["actual"] == r["predicted"] for r in new)
+    k, b = cv["correct_median"], base["correct_median"]
+    versus = "fewer than" if k < b else "as many as" if k == b else "more than"
     st.warning(
         f"**The classifier is not validated.** In leave-one-paper-out cross-validation it gets "
-        f"{cv['correct_median']:.0f} of {cv['n']} records right, fewer than always answering 'solid carbon' "
-        f"({base['correct_median']:.0f} of {base['n']}), and {hits} of {len(new)} newer records it had never seen. "
+        f"{k:g} of {cv['n']} entries right, {versus} always answering 'solid carbon' "
+        f"({b:g} of {base['n']}), and {hits} of {len(new)} newer records it had never seen. "
         "Probabilities are model scores, not chances of success." + (" " + extra if extra else "")
     )
 
@@ -175,7 +178,7 @@ def render_independent_checks(ev):
 
     new = ev["deployed_on_new_records"]
     rows = [
-        row("Deployed recipe, 18 records, leave-one-paper-out", "18 original records | leave-one-paper-out", "A"),
+        row("Deployed recipe, 18 original records, leave-one-paper-out", "18 original records | leave-one-paper-out", "A"),
         {
             "Test": f"Deployed model on {len(new)} newer records it never saw",
             "Classifier": f"{sum(r['actual'] == r['predicted'] for r in new)} of {len(new)}",
@@ -190,16 +193,31 @@ def render_independent_checks(ev):
     i, s6 = ev["inputs"], ev["step6_if_retrained"]
     binary = ev["binary | leave-one-paper-out | A"]
     n = i["records"]
+    changed = ev.get("reclassified_after_training", [])
+    reclassified = "".join(
+        f"- Record {r['Record_ID']} was '{r['trained_as']}' when the model was trained. The records now list it as "
+        + " and ".join(f"'{c}' for {e}" for e, c in r["now"].items())
+        + ". The checks above use the new classes and count each entry once; the deployed model was not retrained.\n"
+        for r in changed
+    )
+    onset = ev.get("corrected_after_training", {}).get("Voltage_V", [])
+    corrected = (
+        f"For records {' and '.join(str(r) for r in onset)} the model was trained on the onset potential; the records now list "
+        "the applied potential. " if onset else ""
+    )
     st.markdown("**Known limits**")
     st.markdown(
         f"- Retraining on {n} records did not beat the baseline either, so the deployed model still uses the original 18.\n"
-        f"- For 'solid carbon formed or not', the retrained recipe gets {binary['correct_median']:g} of {n}, but the single "
-        f"rule 'electrochemical = no, anything else = yes' gets {ev['binary_single_rule_correct']} of {n} (rule read off the "
-        "same data). Nothing here shows that the model has learned additive chemistry.\n"
+        f"- For 'solid carbon as the class or not', the retrained recipe gets {binary['correct_median']:g} of {binary['n']}, but the "
+        f"single rule 'electrochemical = no, anything else = yes' gets {ev['binary_single_rule_correct']} of {binary['n']} (rule read "
+        "off the same data). Nothing here shows that the model has learned additive chemistry.\n"
+        f"{reclassified}"
         f"- {i['distinct_liquid_metal_names']} of {n} liquid-metal names are unique, so the name carries almost no information.\n"
-        f"- Voltage is reported for {i['reported_voltage']} of {n} records (against different reference electrodes), current "
-        f"density for {i['reported_current_density']} (with mixed signs) and temperature for {i['reported_temperature']}; "
-        "missing values are filled with the median, so these inputs barely inform the prediction.\n"
+        f"- Voltage applies only to the {i['electrochemical_records']} electrochemical records. {i['reported_voltage']} of them have a "
+        f"single number in the model inputs, against different reference electrodes. {corrected}Current density "
+        f"is available there for {i['reported_current_density']} of {i['electrochemical_records']} (with mixed signs) and a single "
+        f"temperature for {i['reported_temperature']} of {n}. Missing values are filled with the median, which also gives a "
+        "voltage to records that have none, so these inputs barely inform the prediction.\n"
         "- Classes with a single record cannot be predicted when that record is left out.\n"
         f"- Step 6 ranking is sensitive to the training data: with the {n}-record model only {s6['top20_overlap']} of the top 20 "
         f"rows would stay (additives {', '.join(s6['top20_additives'][0])} would become {', '.join(s6['top20_additives'][1])}; "
@@ -497,9 +515,14 @@ if page == "Overview":
         n_curated = len(fb_mod.load_feedback(curated_feedback_file))
         years = pd.to_numeric(df["Year"], errors="coerce").dropna().astype(int)
         span = f", from {years.min()} to {years.max()}" if not years.empty else ""
+        split = ui.split_records(df)
         st.markdown(
-            f"**{len(df)} published records**{span}. Each number below is one record: select it to open the source. "
+            f"**{df['Record_ID'].nunique()} published records**{span}. Each number below is one record: select it to open the source. "
             "Rows show how the reaction is driven, columns show the main product class."
+            + "".join(
+                f" Record {r} appears as {' and '.join(labels)}, because its main product depends on the condition."
+                for r, labels in split.items()
+            )
         )
         st.markdown(ui.reaction_atlas(df, links), unsafe_allow_html=True)
         single = ui.single_product_modes(df)
@@ -542,7 +565,7 @@ elif page == "Evidence levels":
         "Evidence levels",
         lead="Each content page carries one of five labels. They say where its content comes from and what you may conclude from it.",
     )
-    n_lit = len(load_excel_sheet(step3_file, "Analyzed_database")) if step3_file.exists() else 0
+    n_lit = load_excel_sheet(step3_file, "Analyzed_database")["Record_ID"].nunique() if step3_file.exists() else 0
     comp_df, _ = comp_mod.validate_computational(comp_mod.load_computational(computational_file))
     n_cand = len(load_excel_sheet(step6_file, "All_candidate_predictions")) if step6_file.exists() else 0
     n_rep = len(load_excel_sheet(step7b_file, "Gemini_candidate_reports")) if step7b_file.exists() else 0
@@ -550,7 +573,8 @@ elif page == "Evidence levels":
     rows = [
         ("Reported", f"{n_lit} published records, plus tabulated element properties",
          "What a study observed, under its own conditions.",
-         "A rate or yield for other conditions. Records 19 to 24 were entered from abstracts only.",
+         "A rate or yield for other conditions. The main rows of records 19 to 24 come from abstracts; their conditions and "
+         "products come from the papers.",
          ["Database", "Literature Agent", "Descriptor Explorer"]),
         ("Computed", f"{len(comp_df)} values from the Open Quantum Materials Database",
          "Relative bulk stability at 0 K, for example how strongly an element holds oxygen.",
@@ -619,6 +643,7 @@ elif page == "About":
         pd.DataFrame(
             [
                 ("Literature records", "Available", "24 curated records with source links"),
+                ("Conditions and products", "Available", "Read from the main text, with pages; supporting information not read"),
                 ("Element properties and map", "Available", "Similarity heuristic, not an activity model"),
                 ("Computed properties", "Available", "Public bulk data only; session upload available"),
                 ("Regression of computed properties", "Available when data exist", "Needs at least 5 solutes per property"),
@@ -681,7 +706,11 @@ elif page == "Database":
                 if selected_additives:
                     filtered = filtered[filtered["Additive_metal_clean"].astype(str).isin(selected_additives)]
 
-        st.write(f"Filtered records: {len(filtered)} / {len(df)}")
+        df = df.assign(Entry=df.apply(ui.entry_label, axis=1))
+        filtered = filtered.assign(Entry=filtered.apply(ui.entry_label, axis=1) if len(filtered) else [])
+        st.write(f"Filtered entries: {len(filtered)} / {len(df)}")
+        for r, labels in ui.split_records(df).items():
+            st.caption(f"Record {r} has {len(labels)} entries ({', '.join(labels)}), because its main product depends on the condition.")
 
         # Attach source links from the curated Core_database (same Record_ID).
         if descriptor_file.exists() and "Record_ID" in filtered.columns:
@@ -703,7 +732,7 @@ elif page == "Database":
                 filtered["Source"] = filtered["Source_link"]
 
         key_cols = [
-            "Record_ID",
+            "Entry",
             "Origin",
             "Paper_title",
             "Source",
@@ -734,6 +763,70 @@ elif page == "Database":
             file_name="DigCO2_LM_filtered_database.csv",
             mime="text/csv",
         )
+
+        if descriptor_file.exists():
+            conds = load_excel_sheet(descriptor_file, "Conditions")
+            prods = load_excel_sheet(descriptor_file, "Products")
+            st.subheader("Conditions and products of one record", anchor=False)
+            st.markdown(
+                f"A paper often reports several conditions. The database holds **{len(conds)} conditions** and "
+                f"**{len(prods)} product entries**, read from the papers and listed with their page."
+            )
+            lit_ids = pd.to_numeric(filtered.loc[filtered["Origin"] == "Literature", "Record_ID"], errors="coerce").dropna()
+            lit_ids = lit_ids.astype(int).drop_duplicates().tolist()
+            lit = df[df["Origin"] == "Literature"]
+            lit = lit.set_index(pd.to_numeric(lit["Record_ID"], errors="coerce").astype(int))
+            titles = lit["Paper_title"][~lit.index.duplicated()]
+            n_cond, n_prod = conds["Record_ID"].value_counts(), prods["Record_ID"].value_counts()
+            if not lit_ids:
+                st.caption("No literature record matches the filters above.")
+            else:
+                def record_label(r):
+                    c, k = int(n_cond.get(r, 0)), int(n_prod.get(r, 0))
+                    return (
+                        f"{r}: {titles[r]} ({c} condition{'' if c == 1 else 's'}, "
+                        f"{k} product entr{'y' if k == 1 else 'ies'})"
+                    )
+
+                rid = st.selectbox("Record", lit_ids, format_func=record_label)
+                entries = lit.loc[[rid]]
+                if len(entries) == 1:
+                    st.markdown(f"Product class in the table above: **{entries['Product_class'].iloc[0]}**")
+                else:
+                    st.markdown(
+                        "Product class in the table above: "
+                        + ", ".join(f"**{e['Product_class']}** for {e['Entry']}" for _, e in entries.iterrows())
+                    )
+                for note in entries["Data_notes"].dropna().astype(str).drop_duplicates():
+                    st.caption(note)
+                st.markdown("**Conditions**")
+                st.dataframe(cond_mod.conditions_view(conds[conds["Record_ID"] == rid]), width="stretch", hide_index=True)
+                st.markdown("**Products**")
+                if n_prod.get(rid, 0):
+                    st.dataframe(cond_mod.products_view(prods[prods["Record_ID"] == rid]), width="stretch", hide_index=True)
+                else:
+                    st.markdown("No product share was found in the main text of this record.")
+            st.caption(
+                "An empty cell was not found in the main text; supporting information was not read. Records 17 and 18 have no paper "
+                "file, so their rows repeat the main table. A product that was not "
+                "measured is not zero, and sums are not forced to 100. A main product is named only when nothing unmeasured "
+                "could be larger. These tables are not used by the classifier."
+            )
+            d1, d2 = st.columns(2)
+            with d1:
+                st.download_button(
+                    "Download all conditions as CSV",
+                    conds.to_csv(index=False, encoding="utf-8-sig"),
+                    file_name="DigCO2_LM_conditions.csv",
+                    mime="text/csv",
+                )
+            with d2:
+                st.download_button(
+                    "Download all products as CSV",
+                    prods.to_csv(index=False, encoding="utf-8-sig"),
+                    file_name="DigCO2_LM_products.csv",
+                    mime="text/csv",
+                )
 
 
 # ============================================================

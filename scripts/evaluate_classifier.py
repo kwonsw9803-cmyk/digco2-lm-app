@@ -10,6 +10,8 @@ Recipes (fixed before looking at any score):
   B  A without voltage and current density (mixed reference electrodes, mostly imputed); medians are
      fitted inside each training fold
   C  B without the liquid-metal name (nearly unique per row) and the Is_* flags (duplicate Reaction_type)
+A record whose product class depends on the condition has several entries (rows with the same inputs, record 14); they
+always leave the training set together, and medians are taken over records, not entries.
 All use the same random forest as the original model. Baseline: always the majority class of the training fold.
 Cross-validation: leave-one-record-out, and leave-one-paper-out (records 15-18 are one thesis).
 """
@@ -57,26 +59,32 @@ def flags(rt):
     }
 
 
+NUMBERS = {"Temp_representative_C_ML": "Temp_representative_C", "Voltage_V_ML": "Voltage_V", "Current_density_mA_cm2_ML": "Current_density_mA_cm2"}
+
+
 def load_rows():
-    """24 rows with the original encodings; unreported numbers stay NaN."""
+    """One row per entry (24 records, 25 entries) with the original encodings; unreported numbers stay NaN.
+
+    The 18 records of the deployed model keep the numbers stored in Step4, so correcting the database later does not
+    change what is evaluated here (corrected_after_training lists the differences).
+    """
     norm = pd.read_excel(FINAL, sheet_name="Normalized_database")
     desc = pd.read_excel(FINAL, sheet_name="Element_descriptors").set_index("Element")
-    raw = pd.read_excel(STEP4, sheet_name="Descriptor_merged_raw")
-    known_el = dict(zip(raw["Record_ID"], raw["Additive_element_for_descriptor"]))
-    known_lm = dict(zip(raw["Record_ID"], raw["Liquid_metal_clean_for_ML"]))
+    raw = pd.read_excel(STEP4, sheet_name="Descriptor_merged_raw").set_index("Record_ID")
+    known_el = raw["Additive_element_for_descriptor"].to_dict()
+    known_lm = raw["Liquid_metal_clean_for_ML"].to_dict()
     rows = []
     for _, r in norm.iterrows():
         rid, rt = int(r["Record_ID"]), r["Reaction_type_clean"]
         el = known_el.get(rid, r["Additive_metal_clean"])
         row = {
             "Record_ID": rid,
+            "Entry": str(r["Entry"]),
             "Group": "thesis" if rid in THESIS else f"paper{rid}",
             "Reaction_type_for_ML": rt,
             "Liquid_metal_clean_for_ML": known_lm.get(rid, r["LM_composition"]),
             "Additive_element_for_descriptor": el,
-            "Temp_representative_C_ML": pd.to_numeric(r["Temp_representative_C"], errors="coerce"),
-            "Voltage_V_ML": pd.to_numeric(r["Voltage_V"], errors="coerce"),
-            "Current_density_mA_cm2_ML": pd.to_numeric(r["Current_density_mA_cm2"], errors="coerce"),
+            **{k: pd.to_numeric((raw.loc[rid] if rid in raw.index else r)[c], errors="coerce") for k, c in NUMBERS.items()},
             "Product_class": r["Product_class"],
             **flags(rt),
         }
@@ -90,12 +98,40 @@ def load_rows():
     return df
 
 
+def corrected_after_training():
+    """Numbers of the 18 training records that the database now lists differently, as {column: [Record_ID, ...]}.
+
+    Records with several entries are left out: reclassified_after_training lists them.
+    """
+    norm = pd.read_excel(FINAL, sheet_name="Normalized_database")
+    norm = norm[~norm["Record_ID"].duplicated(keep=False)].set_index("Record_ID")
+    raw = pd.read_excel(STEP4, sheet_name="Descriptor_merged_raw").set_index("Record_ID")
+    raw = raw[raw.index.isin(norm.index)]
+    out = {}
+    for c in NUMBERS.values():
+        a, b = (pd.to_numeric(t.loc[raw.index, c], errors="coerce") for t in (raw, norm))
+        ids = [int(i) for i in raw.index if not (pd.isna(a[i]) and pd.isna(b[i])) and a[i] != b[i]]
+        if ids:
+            out[c] = ids
+    return out
+
+
+def reclassified_after_training(df):
+    """Training records whose class in the database is no longer the one the deployed model was trained on."""
+    raw = pd.read_excel(STEP4, sheet_name="Descriptor_merged_raw").set_index("Record_ID")["Product_class"]
+    now = {i: dict(zip(g["Entry"], g["Product_class"])) for i, g in df.groupby("Record_ID")}
+    return [{"Record_ID": int(i), "trained_as": str(raw[i]), "now": now[i]} for i in raw.index if set(now[i].values()) != {raw[i]}]
+
+
 def check_step4(df):
-    """The first 18 rows, median-filled, must equal the stored ML dataset."""
+    """The first 18 records, median-filled, must equal the stored ML dataset (apart from reclassified records)."""
     stored = pd.read_excel(STEP4, sheet_name="ML_ready_dataset")
-    mine = df.iloc[:18].copy()
+    mine = df.drop_duplicates("Record_ID").iloc[:18].copy()
     mine[tc.NUMERIC] = mine[tc.NUMERIC].fillna(mine[tc.NUMERIC].median())
-    bad = [c for c in tc.CATEGORICAL + ["Product_class"] if list(mine[c].astype(str)) != list(stored[c].astype(str))]
+    same_class = ~mine["Record_ID"].isin([r["Record_ID"] for r in reclassified_after_training(df)]).to_numpy()
+    bad = [c for c in tc.CATEGORICAL if list(mine[c].astype(str)) != list(stored[c].astype(str))]
+    if list(mine["Product_class"][same_class]) != list(stored["Product_class"][same_class]):
+        bad.append("Product_class")
     bad += [c for c in tc.NUMERIC if not np.allclose(mine[c], stored[c])]
     return bad
 
@@ -125,7 +161,7 @@ def make(recipe, seed=42):
 def prepare(df, recipe):
     d = df.copy()
     if recipe == "A":  # original behaviour: medians over every row, before any split
-        d[tc.NUMERIC] = d[tc.NUMERIC].fillna(d[tc.NUMERIC].median())
+        d[tc.NUMERIC] = d[tc.NUMERIC].fillna(d.drop_duplicates("Record_ID")[tc.NUMERIC].median())
     return d
 
 
@@ -136,8 +172,8 @@ def cv_predict(df, y, groups, recipe, seed):
     for tr, te in LeaveOneGroupOut().split(d, y, groups):
         m = make(recipe, seed).fit(d.iloc[tr][cols], y[tr])
         pred[te] = m.predict(d.iloc[te][cols])
-        if "solid carbon formed" in m.classes_:
-            proba[te] = m.predict_proba(d.iloc[te][cols])[:, list(m.classes_).index("solid carbon formed")]
+        if "solid carbon class" in m.classes_:
+            proba[te] = m.predict_proba(d.iloc[te][cols])[:, list(m.classes_).index("solid carbon class")]
     return pred, proba
 
 
@@ -155,7 +191,7 @@ def score(df, y, groups, recipe, binary=False):
             "correct": int((pred == y).sum()),
             "balanced_accuracy": balanced_accuracy_score(y, pred),
             "macro_f1": f1_score(y, pred, average="macro", zero_division=0),
-            "auc": roc_auc_score(y == "solid carbon formed", proba) if binary and recipe != "baseline" else np.nan,
+            "auc": roc_auc_score(y == "solid carbon class", proba) if binary and recipe != "baseline" else np.nan,
         })
     r = pd.DataFrame(out)
     k = r["correct"].median()
@@ -207,7 +243,7 @@ def main(out=None):
     warnings.filterwarnings("ignore")
     df = load_rows()
     bad = check_step4(df)
-    print("first 18 rows equal Step4 ML_ready_dataset:", "yes" if not bad else f"NO -> {bad}")
+    print("first 18 records equal Step4 ML_ready_dataset:", "yes" if not bad else f"NO -> {bad}")
     if bad:
         raise SystemExit(1)
     y = df["Product_class"].to_numpy(dtype=object)
@@ -216,7 +252,7 @@ def main(out=None):
 
     # External test: the deployed model has never seen records 19-24.
     bundle = joblib.load(APP / "product_classifier_random_forest.pkl")
-    med18 = df.loc[~new, tc.NUMERIC].median()
+    med18 = df[~new].drop_duplicates("Record_ID")[tc.NUMERIC].median()
     X_new = df.loc[new, bundle["training_columns"]].copy()
     X_new[tc.NUMERIC] = X_new[tc.NUMERIC].fillna(med18)
     p = bundle["model"].predict(X_new)
@@ -235,25 +271,30 @@ def main(out=None):
                 report[f"{label} | {scheme} | {rec}"] = s
                 print(f"   {rec:9s} {s}")
 
-    yb = np.where(df["Product_class"].str.startswith("solid carbon"), "solid carbon formed", "other").astype(object)
+    yb = np.where(df["Product_class"].str.startswith("solid carbon"), "solid carbon class", "other").astype(object)
     report["binary_counts_24"] = pd.Series(yb).value_counts().to_dict()
-    print("\n== 24 records, binary target (solid carbon formed vs other), leave-one-paper-out", report["binary_counts_24"])
+    print("\n== 24 records, binary target (solid carbon class vs other), leave-one-paper-out", report["binary_counts_24"])
     for rec in ["baseline", "A", "B", "C"]:
         s = score(df, yb, schemes["leave-one-paper-out"], rec, binary=True)
         report[f"binary | leave-one-paper-out | {rec}"] = s
         print(f"   {rec:9s} {s}")
 
-    rule = np.where(df["Reaction_type_for_ML"] == "electrochemical", "other", "solid carbon formed")
+    rule = np.where(df["Reaction_type_for_ML"] == "electrochemical", "other", "solid carbon class")
     report["binary_single_rule_correct"] = int((rule == yb).sum())  # read off the same data: a sanity check, not a model
     report["loocv_18_published_settings"] = loocv_published_settings()
     report["step6_if_retrained"] = step6_if_retrained(df)
+    one = df.drop_duplicates("Record_ID")
     report["inputs"] = {
-        "reported_voltage": int(df["Voltage_V_ML"].notna().sum()),
-        "reported_current_density": int(df["Current_density_mA_cm2_ML"].notna().sum()),
-        "reported_temperature": int(df["Temp_representative_C_ML"].notna().sum()),
-        "distinct_liquid_metal_names": int(df["Liquid_metal_clean_for_ML"].nunique()),
-        "records": len(df),
+        "electrochemical_records": int((one["Reaction_type_for_ML"] == "electrochemical").sum()),
+        "reported_voltage": int(one["Voltage_V_ML"].notna().sum()),
+        "reported_current_density": int(one["Current_density_mA_cm2_ML"].notna().sum()),
+        "reported_temperature": int(one["Temp_representative_C_ML"].notna().sum()),
+        "distinct_liquid_metal_names": int(one["Liquid_metal_clean_for_ML"].nunique()),
+        "records": len(one),
+        "entries": len(df),
     }
+    report["corrected_after_training"] = corrected_after_training()
+    report["reclassified_after_training"] = reclassified_after_training(df)
     for k in ["binary_single_rule_correct", "loocv_18_published_settings", "step6_if_retrained", "inputs"]:
         print(f"\n== {k}: {report[k]}")
 

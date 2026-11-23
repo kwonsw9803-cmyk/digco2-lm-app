@@ -1,0 +1,25 @@
+﻿Record_ID,Entry,Column,Value
+14,14-1 (no water),Voltage_V,-3
+14,14-1 (no water),Reaction_time_h_value,1
+14,14-1 (no water),Reaction_time_note,1 h (product analysis)
+14,14-1 (no water),CO2_feed,CO2 electrolysis in dry organic electrolyte (0.1 M TBAPF6 in DMF)
+14,14-1 (no water),Current_density_mA_cm2,-1.2
+14,14-1 (no water),Main_product,CO (93%); solid carbon below 5% (authors' estimate)
+14,14-1 (no water),Product_class,CO
+14,14-1 (no water),FE_HCOOH_%,3
+14,14-1 (no water),FE_CO_%,93
+14,14-1 (no water),FE_carbon_%,below 5 (authors' estimate)
+14,14-1 (no water),FE_total_%,98.2
+14,14-1 (no water),Data_notes,"Entry for the dry electrolyte at -3.0 V (Table 1, p5; FE_total is the sum printed there, H2 and oxalate included). Record 14 has two entries because the main product changes with water; one entry with class solid carbon until 2026-11-24."
+14,14-2 (2 M water),Voltage_V,-3
+14,14-2 (2 M water),Reaction_time_h_value,1
+14,14-2 (2 M water),Reaction_time_note,1 h (product analysis)
+14,14-2 (2 M water),CO2_feed,CO2 electrolysis in organic electrolyte with 2 M H2O (0.1 M TBAPF6 in DMF)
+14,14-2 (2 M water),Current_density_mA_cm2,-2.2
+14,14-2 (2 M water),Main_product,Formate (46.8%) and CO (36.9%); solid carbon below 5% (authors' estimate)
+14,14-2 (2 M water),Product_class,mixed C1 products
+14,14-2 (2 M water),FE_HCOOH_%,46.8
+14,14-2 (2 M water),FE_CO_%,36.9
+14,14-2 (2 M water),FE_carbon_%,below 5 (authors' estimate)
+14,14-2 (2 M water),FE_total_%,105.1
+14,14-2 (2 M water),Data_notes,"Entry for 2 M water at -3.0 V (Table 1, p5; FE_total is the sum printed there, H2 21.0 and oxalate included). The -2.6 V stored until 2026-11-24 belongs to the runs of more than 16 h (p6). See 14-1."

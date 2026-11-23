@@ -58,7 +58,7 @@ table.lm-atlas td { border-left: 1px solid color-mix(in srgb, currentColor 10%, 
 table.lm-atlas .n { display: block; font-weight: 400; font-size: 0.8rem; opacity: 0.72; }
 .lm-recs { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; align-content: flex-start; }
 .lm-rec, a.lm-rec:link, a.lm-rec:visited {
-    display: inline-block; min-width: 2rem; padding: 0.15rem 0; text-align: center; text-decoration: none;
+    display: inline-block; min-width: 2rem; padding: 0.15rem 0.25rem; text-align: center; text-decoration: none;
     font-family: "Source Code Pro", monospace; font-size: 0.85rem; color: inherit;
     background: color-mix(in srgb, currentColor 10%, transparent);
 }
@@ -108,8 +108,20 @@ def page_header(title, level=None, lead=None):
         st.markdown(lead)
 
 
+def entry_label(row):
+    """Entry of a record, e.g. '7' or '14-1 (no water)'. Rows without an Entry use their Record_ID."""
+    entry = row.get("Entry")
+    return str(row["Record_ID"]) if entry is None or pd.isna(entry) or str(entry).strip() == "" else str(entry)
+
+
+def split_records(analyzed):
+    """{Record_ID: [entry labels]} for records whose product class depends on the condition."""
+    labels = analyzed.apply(entry_label, axis=1)
+    return {r: labels[g.index].tolist() for r, g in analyzed.groupby("Record_ID", sort=False) if len(g) > 1}
+
+
 def reaction_atlas(analyzed, links=None):
-    """HTML table: reaction mode x product class, one chip per record linking to its paper."""
+    """HTML table: reaction mode x product class, one chip per entry linking to its paper."""
     df = analyzed.assign(
         _row=analyzed["Reaction_type_clean"].fillna("Not reported").astype(str),
         _col=analyzed["Product_class"].fillna("Not reported").astype(str),
@@ -121,15 +133,16 @@ def reaction_atlas(analyzed, links=None):
 
     def chip(r):
         rid = str(r["Record_ID"])
+        shown, _, condition = entry_label(r).partition(" ")
         year = "" if pd.isna(r.get("Year")) else f" ({str(r['Year']).split('.')[0]})"
-        title = escape(f"{r.get('Paper_title', '')}{year}", quote=True)
+        title = escape(f"{r.get('Paper_title', '')}{year}" + (f" {condition}" if condition else ""), quote=True)
         url = str(links.get(rid, ""))
         if url.startswith(("https://", "http://")):
             return (
                 f'<a class="lm-rec" href="{escape(url, quote=True)}" target="_blank" rel="noopener noreferrer" '
-                f'title="{title}" aria-label="Record {escape(rid)}: {title}">{escape(rid)}</a>'
+                f'title="{title}" aria-label="Record {escape(shown)}: {title}">{escape(shown)}</a>'
             )
-        return f'<span class="lm-rec" title="{title} (no link recorded)">{escape(rid)}</span>'
+        return f'<span class="lm-rec" title="{title} (no link recorded)">{escape(shown)}</span>'
 
     head = "".join(f'<th scope="col">{escape(c)}<span class="n">{cols[c]}</span></th>' for c in col_order)
     body = ""
@@ -153,6 +166,7 @@ def single_product_modes(analyzed, min_records=2):
     """[(reaction mode, n, product)] for modes whose records all report one product class."""
     out = []
     for mode, g in analyzed.groupby("Reaction_type_clean"):
-        if len(g) >= min_records and g["Product_class"].nunique() == 1:
-            out.append((str(mode), len(g), str(g["Product_class"].iloc[0])))
+        n = g["Record_ID"].nunique()
+        if n >= min_records and g["Product_class"].nunique() == 1:
+            out.append((str(mode), n, str(g["Product_class"].iloc[0])))
     return sorted(out, key=lambda t: -t[1])

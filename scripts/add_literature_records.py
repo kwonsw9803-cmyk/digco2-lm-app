@@ -58,23 +58,27 @@ def crosstab(df, row):
 
 
 def step3_derived(a):
-    counts = lambda col: a[col].value_counts().rename_axis(col).reset_index(name="Count")  # noqa: E731
-    co2 = a["CO2_conversion_representative_%"].map(is_num)
-    carbon = a[CARBON_COLS].apply(lambda r: any(str(v) not in (NR, NA) for v in r), axis=1)
+    # A record may have several entries (rows) with their own product class. Product tables count entries, the rest records.
+    one = a.drop_duplicates("Record_ID")
+    counts = lambda df, col: df[col].value_counts().rename_axis(col).reset_index(name="Count")  # noqa: E731
+    co2 = one["CO2_conversion_representative_%"].map(is_num)
+    carbon = one[CARBON_COLS].apply(lambda r: any(str(v) not in (NR, NA) for v in r), axis=1)
     ec = a[a["Reaction_type_clean"] == "electrochemical"]
     summary = [
-        ("Total records", len(a)),
+        ("Total records", len(one)),
         ("Number of product classes", a["Product_class"].nunique()),
         ("Most frequent product class", a["Product_class"].value_counts().index[0]),
         ("Number of reaction types", a["Reaction_type_clean"].nunique()),
-        ("Electrochemical records", len(ec)),
+        ("Electrochemical records", ec["Record_ID"].nunique()),
         ("Records with CO2 conversion data", int(co2.sum())),
         ("Records with carbon yield/rate data", int(carbon.sum())),
     ]
+    if len(a) > len(one):
+        summary.append(("Total entries", len(a)))
     avail = lambda s, name: s.value_counts().rename_axis(name).reset_index(name="Count").sort_values(name)  # noqa: E731
     return {
-        "Product_class_count": counts("Product_class"),
-        "Reaction_type_count": counts("Reaction_type_clean"),
+        "Product_class_count": counts(a, "Product_class"),
+        "Reaction_type_count": counts(one, "Reaction_type_clean"),
         "Reaction_vs_Product": crosstab(a, "Reaction_type_clean"),
         "Additive_vs_Product": crosstab(a, "Additive_metal_clean"),
         "Temp_vs_Product": crosstab(a, "Temp_class"),
@@ -86,6 +90,7 @@ def step3_derived(a):
 
 def final_counts(core, norm):
     fe_num = norm[FE_COLS].apply(lambda r: any(is_num(v) for v in r), axis=1)
+    one = norm.drop_duplicates("Record_ID")
     return {
         "summary": {
             "Core experimental records": len(core),
@@ -95,15 +100,15 @@ def final_counts(core, norm):
         },
         "summary_reactions": core["Reaction_type"].value_counts(),
         "quality": {
-            "Total records": len(norm),
-            "CO2 conversion available": int(norm["CO2_conversion_representative_%"].map(is_num).sum()),
-            "Carbon yield/rate available": int(norm[CARBON_COLS].apply(
+            "Total records": len(one),
+            "CO2 conversion available": int(one["CO2_conversion_representative_%"].map(is_num).sum()),
+            "Carbon yield/rate available": int(one[CARBON_COLS].apply(
                 lambda r: any(str(v) not in (NR, NA) for v in r), axis=1).sum()),
-            "Exact FE data available": int(fe_num.sum()),
-            "Normalized representative temperature available": int(norm["Temp_representative_C"].map(is_num).sum()),
-            "Electrochemical subset records": int((norm["Reaction_type_clean"] == "electrochemical").sum()),
+            "Exact FE data available": int(norm.loc[fe_num, "Record_ID"].nunique()),
+            "Normalized representative temperature available": int(one["Temp_representative_C"].map(is_num).sum()),
+            "Electrochemical subset records": int((one["Reaction_type_clean"] == "electrochemical").sum()),
         },
-        "quality_reaction": norm["Reaction_type_clean"].value_counts().sort_index(),
+        "quality_reaction": one["Reaction_type_clean"].value_counts().sort_index(),
         "quality_product": norm["Product_class"].value_counts().sort_index(),
     }
 
@@ -141,6 +146,8 @@ def build_rows(rec, rid, norm_cols, core_cols, mech_cols):
     ec = rec["Reaction_type_clean"] == "electrochemical"
     norm = {c: NR for c in norm_cols}
     norm.update({"Record_ID": rid, "Paper_type_clean": "Experimental", "Data_notes": None})
+    if "Entry" in norm_cols:
+        norm["Entry"] = str(rid)
     for c in ["Voltage_V", "Current_density_mA_cm2", "Reference_electrode"] + FE_COLS:
         norm[c] = NR if ec else NA
     # Carbon columns stay "Not reported" even for non-carbon products, as in the existing rows.

@@ -12,7 +12,7 @@ submitted experiment and the model (after Step 3). Version 0.4 and earlier also 
 |---|---|---|---|
 | | Overview | `/` | Reaction atlas: every record by reaction mode and product class |
 | | Evidence levels | `/evidence` | What each level can and cannot support |
-| Reported | Records | `/records` | 24 curated literature records with source links, plus curated experimental feedback |
+| Reported | Records | `/records` | 24 curated literature records with source links, conditions and products per record, plus curated experimental feedback |
 | Reported | Ask the records | `/ask` | TF-IDF retrieval over the records + optional Claude answer citing records as [R#] |
 | Reported | Element properties | `/elements` | Tabulated element descriptors |
 | Computed | Computed properties | `/computed` | DFT/AIMD records (`data/computational_data.csv`), session-only CSV upload, LOOCV regression |
@@ -49,7 +49,20 @@ Claude Pro/Max subscriptions.
   refreshes the derived sheets, and skips DOIs already present. Records 19–24 were added on 2026-11-20 from
   abstracts (`data/review/literature_additions_2026-11-20.json`; screening of all candidates in
   `data/review/literature_candidates_2026-11-20.csv`). `Step4_ML_ready_dataset.xlsx` and the model still use the
-  original 18 records: retraining on 24 was evaluated on 2026-11-23 and not adopted (see Model note).
+  original 18 records: retraining on 24 was evaluated on 2026-11-23 and 2026-11-24 and not adopted (see Model note).
+- The same workbook holds `Conditions` (58 rows, one per record and condition) and `Products` (66 rows, one per condition
+  and product), read from the main text of the papers with page numbers. Rules: a number is entered only if the authors
+  state it; `Evidence` says whether it was measured, obtained by difference, estimated, shown only in a figure or merely
+  mentioned; a product that was not measured is not zero; sums are not forced to 100. `Main_CO2_product` is named only
+  when no unmeasured part of the charge could be larger (`digco2/conditions.py`). Records 17 and 18 (thesis chapters
+  without a PDF) carry database values only. `python scripts/apply_conditions.py 2026-11-24` rebuilds both sheets from
+  the reviewed tables in `data/review` and applies `record_corrections_2026-11-24.csv` (values of records 1, 7, 11, 12,
+  14, 16 and 24, and a note on records 19-24) and `record_entries_2026-11-24.csv`.
+- `Product_class` is the main product. Where it depends on the condition a record has several entries (column `Entry`) in
+  Normalized_database, Electrochemical_subset and Analyzed_database: record 14 is 14-1 (no water, CO) and 14-2 (2 M water,
+  mixed C1 products). Core_database and Mechanism_notes keep one row per record. Record 12 stays solid carbon although only
+  5.6% of the charge is accounted for: it is the only product measured. `Step4_ML_ready_dataset.xlsx` and the model were not
+  changed: the model was trained on the onset potentials of records 11 and 12 and on record 14 as solid carbon.
 - `data/computational_data.csv`: one computed property per row (`Solute`, `Property`, `Value`, `Unit`, ...).
   Download the template from the Computed properties page. Only published or public data belongs here.
   The current rows are 0 K bulk formation energies from the Open Quantum Materials Database (CC BY 4.0),
@@ -84,13 +97,15 @@ but random-forest sampling differs between versions, so its predictions differ f
 ### Validation
 
 `scripts/evaluate_classifier.py data/model_evaluation.json` (about half an hour) compares the classifier with the
-majority-class baseline; the app shows the saved report. Result on 2026-11-23, leave-one-paper-out, median of 10 seeds:
+majority-class baseline; the app shows the saved report. Result on 2026-11-24 with the current classes,
+leave-one-paper-out, median of 10 seeds, in entries (record 14 has two):
 
 | Data | Baseline | Original recipe |
 |---|---|---|
-| 18 records | 13/18 | 8/18 |
-| 24 records (retrained, not deployed) | 15/24 | 12/24 |
+| 18 records (19 entries) | 12/19 | 7/19 |
+| 24 records (25 entries; retrained, not deployed) | 14/25 | 10/25 |
 | 6 newer records, deployed model | 2/6 | 2/6 |
 
+With the classes of 2026-11-23 (record 14 as solid carbon) it was 13/18 against 8/18 and 15/24 against 12/24.
 No recipe beats the baseline, so the deployed model was kept. The LOOCV accuracy of 0.667 stored in Step4
 `Model_summary` is reproduced only without class weights; the deployed settings give 0.50 on the same 18 rows.

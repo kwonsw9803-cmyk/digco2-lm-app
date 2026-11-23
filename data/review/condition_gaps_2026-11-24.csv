@@ -1,0 +1,25 @@
+﻿Record_ID,Paper_title,DOI_or_URL,Not_found_in_main_text,Check
+1,Liquid-Metal-Enabled Mechanical-Energy-Induced CO2 Conversion,https://doi.org/10.1002/adma.202105789,pressure,"supporting information (time, energy source)"
+2,Sodium-gallium liquid metal enables mild-condition carbon dioxide conversion to solid carbon for sustainable electrode materials,https://doi.org/10.1016/j.jcis.2025.138025,CO2 conversion or rate; CO2 flow,
+3,CO2 to C conversion using Ga and Sn-based alloys based on thermochemical approach,https://doi.org/10.1016/j.jece.2025.118284,pressure,whether 300 mL/min is the total gas flow
+4,Carbon Dioxide Reduction on Large Area Liquid Metal Gallium-indium Electrocatalysts,https://scholarworks.uark.edu/chbcuht/42,current density; pressure; CO2 flow,temperature not stated
+5,Conversion of CO2 into fibrous carbon materials using Ga-based liquid alloys,https://doi.org/10.1016/j.jece.2024.112721,pressure; CO2 flow,
+6,Room-temperature CO2 conversion to carbon using liquid metal alloy catalysts without external energy input,https://doi.org/10.1016/j.jics.2024.101467,,whether 50 mL/min is the total gas flow
+7,Room-temperature CO2-to-carbon conversion facilitated by copper-gallium liquid metal,https://doi.org/10.1016/j.cej.2025.160589,,authors (the conclusion gives 600 mL/h with 96%)
+8,CO2 reduction on the Li-Ga liquid metal surface,https://doi.org/10.1039/d3ta00408b,CO2 conversion or rate; CO2 flow,
+9,Low-Temperature CO2 Reduction using Mg-Ga Liquid Metal Interface,https://doi.org/10.1002/admi.202201625,CO2 conversion or rate; CO2 flow,text (72 h is from a figure caption)
+10,Direct conversion of CO2 to solid carbon by Ga-based liquid metals,https://doi.org/10.1039/d1ee03283f,CO2 flow,
+11,Room temperature CO2 reduction to solid carbon species on liquid metals featuring atomically thin ceria interfaces,https://doi.org/10.1038/s41467-019-08824-8,current density; pressure; CO2 flow,
+12,Liquid metal-based catalysts for the electroreduction of carbon dioxide into solid carbon,https://doi.org/10.1039/d3ta01379k,current density; pressure,temperature not stated
+13,CO2 Reduction on Liquid GaInSn-Metal: Dynamics of the Electrode-Electrolyte Interface,https://doi.org/10.1002/cctc.202401740,temperature; time; pressure,
+14,"From CO2 to Solid Carbon: Reaction Mechanism, Active Species, and Conditioning the Ce-Alloyed GaInSn Catalyst",https://doi.org/10.1021/acs.jpcc.4c05482,pressure; CO2 flow,temperature not stated
+15,Development of Novel Liquid Metal Catalysts for Carbon Dioxide Reduction to Carbonaceous Products - Chapter 4,https://doi.org/10.1002/adfm.202307846,pressure; CO2 flow,
+16,Development of Novel Liquid Metal Catalysts for Carbon Dioxide Reduction to Carbonaceous Products - Chapter 5,https://doi.org/10.1002/smll.202311302,CO2 flow,
+17,Development of Novel Liquid Metal Catalysts for Carbon Dioxide Reduction to Carbonaceous Products - Chapter 6,Not reported,CO2 conversion or rate; pressure; CO2 flow,thesis chapter 6
+18,Development of Novel Liquid Metal Catalysts for Carbon Dioxide Reduction to Carbonaceous Products - Chapter 7,Not reported,current density; Faradaic efficiency; pressure; CO2 flow,thesis chapter 7
+19,Surface Enrichment in Gallium-Indium Liquid Alloys: Applied to CO2 Conversion,https://doi.org/10.1002/adfm.202316435,pressure,Fig. 4F (35 or 45 C)
+20,Liquid Metal Alloys Enable Efficient Formate Electrosynthesis,https://doi.org/10.1002/adfm.202408966,temperature; pressure; CO2 flow,"supporting information (electrolyte, temperature)"
+21,Spontaneous Phase Transition and Multistage Interfacial Mechanical Friction of Liquid Metals Induced CO2 Reduction at Room Temperature,https://doi.org/10.1002/adfm.202413156,CO2 flow,
+22,The Native Oxide Skin of Liquid Metal Ga Nanoparticles Prevents Their Rapid Coalescence during Electrocatalysis,https://doi.org/10.1021/jacs.2c03698,temperature; current density,
+23,Liquid/Solid EGaIn@Ag Heterostructure Catalyst Enabling CO2 Electroreduction to CO in a Three-Membrane Electrolyzer With Co-Production of K2CO3 and Cl2,https://doi.org/10.1002/rar2.70411,temperature; pressure,text (0.3 and 0.4 M are both given)
+24,Room temperature conversion of CO2 to graphene allotropes in low-melting-point liquid metal electrocatalytic reactor - hydrodynamics control through inverted gas bubbler design,https://doi.org/10.1016/j.ccst.2026.100587,,
