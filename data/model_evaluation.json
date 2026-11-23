@@ -1,0 +1,399 @@
+{
+ "class_counts_24": {
+  "solid carbon": 15,
+  "CO": 3,
+  "liquid oxygenates": 3,
+  "solid carbon / mixed gas products": 1,
+  "mixed C1 products": 1,
+  "liquid products": 1
+ },
+ "deployed_on_new_records": [
+  {
+   "Record_ID": 19,
+   "actual": "liquid oxygenates",
+   "predicted": "solid carbon"
+  },
+  {
+   "Record_ID": 20,
+   "actual": "liquid oxygenates",
+   "predicted": "solid carbon"
+  },
+  {
+   "Record_ID": 21,
+   "actual": "solid carbon",
+   "predicted": "solid carbon"
+  },
+  {
+   "Record_ID": 22,
+   "actual": "CO",
+   "predicted": "solid carbon"
+  },
+  {
+   "Record_ID": 23,
+   "actual": "CO",
+   "predicted": "solid carbon / mixed gas products"
+  },
+  {
+   "Record_ID": 24,
+   "actual": "solid carbon",
+   "predicted": "solid carbon"
+  }
+ ],
+ "18 original records | leave-one-record-out | baseline": {
+  "n": 18,
+  "correct_median": 13.0,
+  "correct_range": [
+   13,
+   13
+  ],
+  "accuracy": 0.722,
+  "wilson95_of_median": [
+   0.491,
+   0.875
+  ],
+  "balanced_accuracy": 0.167,
+  "macro_f1": 0.14,
+  "auc": null
+ },
+ "18 original records | leave-one-record-out | A": {
+  "n": 18,
+  "correct_median": 7.5,
+  "correct_range": [
+   7,
+   9
+  ],
+  "accuracy": 0.422,
+  "wilson95_of_median": [
+   0.224,
+   0.639
+  ],
+  "balanced_accuracy": 0.097,
+  "macro_f1": 0.106,
+  "auc": null
+ },
+ "18 original records | leave-one-record-out | B": {
+  "n": 18,
+  "correct_median": 8.0,
+  "correct_range": [
+   7,
+   8
+  ],
+  "accuracy": 0.422,
+  "wilson95_of_median": [
+   0.246,
+   0.663
+  ],
+  "balanced_accuracy": 0.097,
+  "macro_f1": 0.107,
+  "auc": null
+ },
+ "18 original records | leave-one-record-out | C": {
+  "n": 18,
+  "correct_median": 7.0,
+  "correct_range": [
+   7,
+   7
+  ],
+  "accuracy": 0.389,
+  "wilson95_of_median": [
+   0.203,
+   0.614
+  ],
+  "balanced_accuracy": 0.09,
+  "macro_f1": 0.102,
+  "auc": null
+ },
+ "18 original records | leave-one-paper-out | baseline": {
+  "n": 18,
+  "correct_median": 13.0,
+  "correct_range": [
+   13,
+   13
+  ],
+  "accuracy": 0.722,
+  "wilson95_of_median": [
+   0.491,
+   0.875
+  ],
+  "balanced_accuracy": 0.167,
+  "macro_f1": 0.14,
+  "auc": null
+ },
+ "18 original records | leave-one-paper-out | A": {
+  "n": 18,
+  "correct_median": 8.0,
+  "correct_range": [
+   8,
+   9
+  ],
+  "accuracy": 0.467,
+  "wilson95_of_median": [
+   0.246,
+   0.663
+  ],
+  "balanced_accuracy": 0.108,
+  "macro_f1": 0.114,
+  "auc": null
+ },
+ "18 original records | leave-one-paper-out | B": {
+  "n": 18,
+  "correct_median": 8.0,
+  "correct_range": [
+   8,
+   9
+  ],
+  "accuracy": 0.461,
+  "wilson95_of_median": [
+   0.246,
+   0.663
+  ],
+  "balanced_accuracy": 0.106,
+  "macro_f1": 0.114,
+  "auc": null
+ },
+ "18 original records | leave-one-paper-out | C": {
+  "n": 18,
+  "correct_median": 8.0,
+  "correct_range": [
+   8,
+   8
+  ],
+  "accuracy": 0.444,
+  "wilson95_of_median": [
+   0.246,
+   0.663
+  ],
+  "balanced_accuracy": 0.103,
+  "macro_f1": 0.112,
+  "auc": null
+ },
+ "24 records | leave-one-record-out | baseline": {
+  "n": 24,
+  "correct_median": 15.0,
+  "correct_range": [
+   15,
+   15
+  ],
+  "accuracy": 0.625,
+  "wilson95_of_median": [
+   0.427,
+   0.788
+  ],
+  "balanced_accuracy": 0.167,
+  "macro_f1": 0.128,
+  "auc": null
+ },
+ "24 records | leave-one-record-out | A": {
+  "n": 24,
+  "correct_median": 12.0,
+  "correct_range": [
+   11,
+   13
+  ],
+  "accuracy": 0.5,
+  "wilson95_of_median": [
+   0.314,
+   0.686
+  ],
+  "balanced_accuracy": 0.311,
+  "macro_f1": 0.268,
+  "auc": null
+ },
+ "24 records | leave-one-record-out | B": {
+  "n": 24,
+  "correct_median": 12.0,
+  "correct_range": [
+   11,
+   13
+  ],
+  "accuracy": 0.496,
+  "wilson95_of_median": [
+   0.314,
+   0.686
+  ],
+  "balanced_accuracy": 0.31,
+  "macro_f1": 0.262,
+  "auc": null
+ },
+ "24 records | leave-one-record-out | C": {
+  "n": 24,
+  "correct_median": 12.0,
+  "correct_range": [
+   11,
+   12
+  ],
+  "accuracy": 0.496,
+  "wilson95_of_median": [
+   0.314,
+   0.686
+  ],
+  "balanced_accuracy": 0.31,
+  "macro_f1": 0.267,
+  "auc": null
+ },
+ "24 records | leave-one-paper-out | baseline": {
+  "n": 24,
+  "correct_median": 15.0,
+  "correct_range": [
+   15,
+   15
+  ],
+  "accuracy": 0.625,
+  "wilson95_of_median": [
+   0.427,
+   0.788
+  ],
+  "balanced_accuracy": 0.167,
+  "macro_f1": 0.128,
+  "auc": null
+ },
+ "24 records | leave-one-paper-out | A": {
+  "n": 24,
+  "correct_median": 12.0,
+  "correct_range": [
+   11,
+   13
+  ],
+  "accuracy": 0.5,
+  "wilson95_of_median": [
+   0.314,
+   0.686
+  ],
+  "balanced_accuracy": 0.311,
+  "macro_f1": 0.259,
+  "auc": null
+ },
+ "24 records | leave-one-paper-out | B": {
+  "n": 24,
+  "correct_median": 12.0,
+  "correct_range": [
+   11,
+   13
+  ],
+  "accuracy": 0.496,
+  "wilson95_of_median": [
+   0.314,
+   0.686
+  ],
+  "balanced_accuracy": 0.31,
+  "macro_f1": 0.254,
+  "auc": null
+ },
+ "24 records | leave-one-paper-out | C": {
+  "n": 24,
+  "correct_median": 12.0,
+  "correct_range": [
+   12,
+   12
+  ],
+  "accuracy": 0.5,
+  "wilson95_of_median": [
+   0.314,
+   0.686
+  ],
+  "balanced_accuracy": 0.311,
+  "macro_f1": 0.259,
+  "auc": null
+ },
+ "binary_counts_24": {
+  "solid carbon formed": 16,
+  "other": 8
+ },
+ "binary | leave-one-paper-out | baseline": {
+  "n": 24,
+  "correct_median": 16.0,
+  "correct_range": [
+   16,
+   16
+  ],
+  "accuracy": 0.667,
+  "wilson95_of_median": [
+   0.467,
+   0.82
+  ],
+  "balanced_accuracy": 0.5,
+  "macro_f1": 0.4,
+  "auc": null
+ },
+ "binary | leave-one-paper-out | A": {
+  "n": 24,
+  "correct_median": 19.5,
+  "correct_range": [
+   19,
+   20
+  ],
+  "accuracy": 0.812,
+  "wilson95_of_median": [
+   0.618,
+   0.921
+  ],
+  "balanced_accuracy": 0.828,
+  "macro_f1": 0.802,
+  "auc": 0.872
+ },
+ "binary | leave-one-paper-out | B": {
+  "n": 24,
+  "correct_median": 19.0,
+  "correct_range": [
+   18,
+   20
+  ],
+  "accuracy": 0.792,
+  "wilson95_of_median": [
+   0.595,
+   0.908
+  ],
+  "balanced_accuracy": 0.812,
+  "macro_f1": 0.782,
+  "auc": 0.87
+ },
+ "binary | leave-one-paper-out | C": {
+  "n": 24,
+  "correct_median": 14.5,
+  "correct_range": [
+   13,
+   15
+  ],
+  "accuracy": 0.6,
+  "wilson95_of_median": [
+   0.408,
+   0.772
+  ],
+  "balanced_accuracy": 0.647,
+  "macro_f1": 0.597,
+  "auc": 0.725
+ },
+ "binary_single_rule_correct": 19,
+ "loocv_18_published_settings": {
+  "deployed_settings_balanced": 0.5,
+  "without_class_weight": 0.667
+ },
+ "step6_if_retrained": {
+  "candidates": 240,
+  "class_changes": 10,
+  "mean_p_solid_carbon": [
+   0.813,
+   0.466
+  ],
+  "top20_overlap": 10,
+  "top20_additives": [
+   [
+    "Mg",
+    "Na"
+   ],
+   [
+    "Ca",
+    "Li",
+    "Mg",
+    "Na"
+   ]
+  ]
+ },
+ "inputs": {
+  "reported_voltage": 8,
+  "reported_current_density": 2,
+  "reported_temperature": 16,
+  "distinct_liquid_metal_names": 23,
+  "records": 24
+ }
+}

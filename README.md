@@ -35,7 +35,7 @@ Live Gemini calls are limited to 5 per browser session.
   refreshes the derived sheets, and skips DOIs already present. Records 19–24 were added on 2026-11-20 from
   abstracts (`data/review/literature_additions_2026-11-20.json`; screening of all candidates in
   `data/review/literature_candidates_2026-11-20.csv`). `Step4_ML_ready_dataset.xlsx` and the model still use the
-  original 18 records until the classifier is retrained.
+  original 18 records: retraining on 24 was evaluated on 2026-11-23 and not adopted (see Model note).
 - `data/computational_data.csv`: one computed property per row (`Solute`, `Property`, `Value`, `Unit`, ...).
   Download the template from the Computational Data page. Only published or public data belongs here.
   The current rows are 0 K bulk formation energies from the Open Quantum Materials Database (CC BY 4.0),
@@ -66,3 +66,17 @@ unchanged: predicted probabilities are identical to the original model on the 18
 When upgrading scikit-learn, run `python scripts/migrate_model.py` with the new version, check the
 predictions, then update the pin. `scripts/train_classifier.py` retrains from scratch with the same settings,
 but random-forest sampling differs between versions, so its predictions differ from the published model.
+
+### Validation
+
+`scripts/evaluate_classifier.py data/model_evaluation.json` (about half an hour) compares the classifier with the
+majority-class baseline; the app shows the saved report. Result on 2026-11-23, leave-one-paper-out, median of 10 seeds:
+
+| Data | Baseline | Original recipe |
+|---|---|---|
+| 18 records | 13/18 | 8/18 |
+| 24 records (retrained, not deployed) | 15/24 | 12/24 |
+| 6 newer records, deployed model | 2/6 | 2/6 |
+
+No recipe beats the baseline, so the deployed model was kept. The LOOCV accuracy of 0.667 stored in Step4
+`Model_summary` is reproduced only without class weights; the deployed settings give 0.50 on the same 18 rows.

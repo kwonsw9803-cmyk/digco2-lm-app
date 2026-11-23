@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 
@@ -45,6 +46,7 @@ descriptor_file = base_dir / "Final_LM_CO2_platform_database_with_descriptors.xl
 model_file = base_dir / "product_classifier_random_forest.pkl"
 
 data_dir = base_dir / "data"
+evaluation_file = data_dir / "model_evaluation.json"
 computational_file = data_dir / "computational_data.csv"
 pending_feedback_file = data_dir / "feedback" / "pending_feedback.csv"
 curated_feedback_file = data_dir / "feedback" / "curated_feedback.csv"
@@ -189,6 +191,35 @@ def load_model(model_path):
     return _load_model(str(model_path), file_stamp(model_path))
 
 
+@st.cache_data
+def _read_json(path, stamp):
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def load_model_evaluation():
+    """Independent evaluation written by scripts/evaluate_classifier.py, or None."""
+    if not evaluation_file.exists():
+        return None
+    return _read_json(str(evaluation_file), file_stamp(evaluation_file))
+
+
+def render_unvalidated_warning(extra=""):
+    """One-paragraph warning for every place that shows a classifier output."""
+    ev = load_model_evaluation()
+    if not ev:
+        return
+    cv = ev["18 original records | leave-one-paper-out | A"]
+    base = ev["18 original records | leave-one-paper-out | baseline"]
+    new = ev["deployed_on_new_records"]
+    hits = sum(r["actual"] == r["predicted"] for r in new)
+    st.warning(
+        f"**The classifier is not validated.** In leave-one-paper-out cross-validation it gets "
+        f"{cv['correct_median']:.0f} of {cv['n']} records right, fewer than always answering 'solid carbon' "
+        f"({base['correct_median']:.0f} of {base['n']}), and {hits} of {len(new)} newer records it had never seen. "
+        "Probabilities are model scores, not chances of success." + (" " + extra if extra else "")
+    )
+
+
 def file_status(path):
     return "✅ Found" if path.exists() else "❌ Missing"
 
@@ -231,6 +262,53 @@ def training_categories(column):
     return sorted(df[column].dropna().astype(str).str.strip().unique())
 
 
+def render_independent_checks(ev):
+    """Cross-validation and unseen-record checks, including the 24-record retraining that was not deployed."""
+
+    def row(test, key, rec):
+        s, b = ev[f"{key} | {rec}"], ev[f"{key} | baseline"]
+        lo, hi = s["wilson95_of_median"]
+        return {
+            "Test": test,
+            "Classifier": f"{s['correct_median']:g} of {s['n']}",
+            "Always 'solid carbon'": f"{b['correct_median']:g} of {b['n']}",
+            "95% interval of classifier accuracy": f"{lo:.0%} to {hi:.0%}",
+        }
+
+    new = ev["deployed_on_new_records"]
+    rows = [
+        row("Deployed recipe, 18 records, leave-one-paper-out", "18 original records | leave-one-paper-out", "A"),
+        {
+            "Test": f"Deployed model on {len(new)} newer records it never saw",
+            "Classifier": f"{sum(r['actual'] == r['predicted'] for r in new)} of {len(new)}",
+            "Always 'solid carbon'": f"{sum(r['actual'] == 'solid carbon' for r in new)} of {len(new)}",
+            "95% interval of classifier accuracy": "too few records",
+        },
+        row("Retrained on 24 records (not deployed), leave-one-paper-out", "24 records | leave-one-paper-out", "A"),
+    ]
+    st.markdown("**Independent checks** (median of 10 random seeds)")
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+
+    i, s6 = ev["inputs"], ev["step6_if_retrained"]
+    binary = ev["binary | leave-one-paper-out | A"]
+    n = i["records"]
+    st.markdown("**Known limits**")
+    st.markdown(
+        f"- Retraining on {n} records did not beat the baseline either, so the deployed model still uses the original 18.\n"
+        f"- For 'solid carbon formed or not', the retrained recipe gets {binary['correct_median']:g} of {n}, but the single "
+        f"rule 'electrochemical = no, anything else = yes' gets {ev['binary_single_rule_correct']} of {n} (rule read off the "
+        "same data). Nothing here shows that the model has learned additive chemistry.\n"
+        f"- {i['distinct_liquid_metal_names']} of {n} liquid-metal names are unique, so the name carries almost no information.\n"
+        f"- Voltage is reported for {i['reported_voltage']} of {n} records (against different reference electrodes), current "
+        f"density for {i['reported_current_density']} (with mixed signs) and temperature for {i['reported_temperature']}; "
+        "missing values are filled with the median, so these inputs barely inform the prediction.\n"
+        "- Classes with a single record cannot be predicted when that record is left out.\n"
+        f"- Step 6 ranking is sensitive to the training data: with the {n}-record model only {s6['top20_overlap']} of the top 20 "
+        f"rows would stay (additives {', '.join(s6['top20_additives'][0])} would become {', '.join(s6['top20_additives'][1])}; "
+        "many rows are tied)."
+    )
+
+
 def render_model_performance():
     """Compare the classifier with a majority-class baseline, using Step4 outputs."""
     if not step4_file.exists():
@@ -238,6 +316,7 @@ def render_model_performance():
     xls = pd.ExcelFile(step4_file, engine="openpyxl")
 
     with st.expander("Model performance vs. majority-class baseline", expanded=True):
+        ev = load_model_evaluation()
         data = load_excel_sheet(step4_file, "ML_ready_dataset")
         if "Product_class" not in data.columns or data.empty:
             st.info("Product_class column not found in the ML-ready dataset.")
@@ -251,7 +330,15 @@ def render_model_performance():
         if "Model_summary" in xls.sheet_names:
             summary = load_excel_sheet(step4_file, "Model_summary")
             for _, r in summary.iterrows():
-                rows.append({"Model": r["Model"], "Accuracy": r["Accuracy_or_CV_score"], "Note": r.get("Comment", "")})
+                note = r.get("Comment", "")
+                if ev and str(r["Model"]) == "RandomForestClassifier_LOOCV":
+                    s = ev["loocv_18_published_settings"]
+                    if abs(s["without_class_weight"] - float(r["Accuracy_or_CV_score"])) < 0.005:
+                        note = (
+                            f"Reproduced only without class weights; the deployed model uses balanced class "
+                            f"weights and scores {s['deployed_settings_balanced']:.3f}"
+                        )
+                rows.append({"Model": r["Model"], "Accuracy": r["Accuracy_or_CV_score"], "Note": note})
         rows.append(
             {
                 "Model": f"Majority-class baseline (always '{majority_class}')",
@@ -276,6 +363,9 @@ def render_model_performance():
             hide_index=True,
             column_config={"Accuracy": st.column_config.NumberColumn(format="%.3f")},
         )
+        if ev:
+            render_independent_checks(ev)
+
         st.markdown("**Class distribution (training data)**")
         dist = counts.rename_axis("Product_class").reset_index(name="Records")
         st.dataframe(dist, width="stretch", hide_index=True)
@@ -892,8 +982,9 @@ elif page == "ML Prediction":
             temp_c = st.number_input("Temperature (°C)", value=40.0, step=10.0)
 
         with c3:
-            voltage_v = st.number_input("Voltage (V)", value=0.0, step=0.1)
-            current_density = st.number_input("Current density (mA/cm²)", value=0.0, step=0.1)
+            sparse = "Reported for few training records (the rest were filled with the median), so it barely informs the prediction."
+            voltage_v = st.number_input("Voltage (V)", value=0.0, step=0.1, help=sparse)
+            current_density = st.number_input("Current density (mA/cm²)", value=0.0, step=0.1, help=sparse)
 
         if st.button("Predict product class"):
             condition = make_condition_for_model(
@@ -909,6 +1000,7 @@ elif page == "ML Prediction":
             pred, prob_df = predict_condition(condition)
 
             st.success(f"Predicted product class: {pred}")
+            render_unvalidated_warning()
 
             if prob_df is not None:
                 st.subheader("Prediction probability")
@@ -938,6 +1030,15 @@ elif page == "Recommendation Agent":
         c2.metric("All candidates", len(all_df))
         if "Predicted_Product_class" in top_df.columns:
             c3.metric("Predicted classes", top_df["Predicted_Product_class"].nunique())
+
+        ev = load_model_evaluation()
+        render_unvalidated_warning(
+            f"The final score is 10 × ML probability + rule score, and only {ev['step6_if_retrained']['top20_overlap']} of the "
+            f"top 20 rows would stay if the model were retrained on {ev['inputs']['records']} records. "
+            "Use this list to choose experiments, not as evidence."
+            if ev
+            else ""
+        )
 
         st.divider()
 
@@ -1041,6 +1142,7 @@ elif page == "Gemini Agent Report":
     if not step7b_file.exists():
         st.warning("Step7b_Gemini_LLM_agent_report.xlsx not found.")
     else:
+        render_unvalidated_warning("These stored reports quote those scores.")
         report_df = load_excel_sheet(step7b_file, "Gemini_candidate_reports")
         st.write("LLM reports:", report_df.shape)
 
@@ -1094,6 +1196,7 @@ elif page == "Live Gemini Generator":
             selected = st.selectbox("Select candidate", options)
             row = top_df.iloc[options.index(selected)]
 
+            render_unvalidated_warning("The prompt below quotes those scores.")
             prompt = build_gemini_prompt_from_candidate(row)
             st.caption(f"Model: {GEMINI_MODEL} (set GEMINI_MODEL in secrets to change)")
 
@@ -1471,6 +1574,7 @@ elif page == "Experimental Feedback":
                         f"Discrepancy: the model predicts '{pred}'" + (f" (p = {prob:.2f})" if prob is not None else "")
                         + f" but you observed '{product_class}'. Discrepancies are the most valuable feedback for retraining."
                     )
+                st.caption("The classifier does not beat the majority-class baseline: agreement does not confirm a result.")
 
             fb_list = st.session_state.setdefault("feedback_submissions", [])
             entry["Feedback_ID"] = fb_mod.new_feedback_id(len(fb_list))
