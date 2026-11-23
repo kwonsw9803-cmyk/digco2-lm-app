@@ -1,21 +1,30 @@
 # DigCO2-LM
 
 An AI-enabled digital catalysis platform for liquid-metal-mediated CO₂ conversion, built with Streamlit.
-The platform design follows DigMethpy (Cheng et al., *AI Agent* 2026, 2, 8; DOI 10.20517/aiagent.2026.11):
-data → model → prediction → validation → feedback.
+The interface and its evidence-level structure (reported, computed, modelled, AI-written, tested) are our own.
+Three methods were informed by DigMethpy (Cheng et al., *AI Agent* 2026, 2, 8; DOI 10.20517/aiagent.2026.11): the
+element map (after Fig. 4B), the regression of computed properties (after Fig. 4A), and recording agreement between a
+submitted experiment and the model (after Step 3). Version 0.4 and earlier also followed its platform design.
 
-## Modules
+## Pages
 
-| Page | What it does |
-|---|---|
-| Database | 24 curated literature records with source links, plus curated experimental feedback |
-| Descriptor Explorer / Screening | Element descriptors; descriptor map and similarity ranking of untested additives |
-| Computational Data | DFT/AIMD records (`data/computational_data.csv`), session-only CSV upload, LOOCV descriptor regression |
-| ML Prediction | Preliminary product-class classifier, shown against a majority-class baseline |
-| Recommendation Agent | Pre-computed candidate ranking (Step 6) |
-| Literature Agent | TF-IDF retrieval over the records + optional Claude answer citing records as [R#] |
-| Gemini Agent Report / Live Claude Generator | Stored reports (written by Gemini) / live Claude reports per candidate |
-| Experimental Feedback | Submit a result, compare with the model, save as pending for review |
+| Evidence level | Page | Path | What it does |
+|---|---|---|---|
+| | Overview | `/` | Reaction atlas: every record by reaction mode and product class |
+| | Evidence levels | `/evidence` | What each level can and cannot support |
+| Reported | Records | `/records` | 24 curated literature records with source links, plus curated experimental feedback |
+| Reported | Ask the records | `/ask` | TF-IDF retrieval over the records + optional Claude answer citing records as [R#] |
+| Reported | Element properties | `/elements` | Tabulated element descriptors |
+| Computed | Computed properties | `/computed` | DFT/AIMD records (`data/computational_data.csv`), session-only CSV upload, LOOCV regression |
+| Modelled | Element map | `/element-map` | Descriptor map and similarity ranking of untested additives |
+| Modelled | Product class | `/product-class` | Preliminary classifier, shown against a majority-class baseline |
+| Modelled | Candidates | `/candidates` | Pre-computed candidate ranking (Step 6) |
+| AI-written | Stored reports | `/stored-reports` | Reports written by Gemini |
+| AI-written | New report | `/new-report` | Live Claude report per candidate (off until connected) |
+| Tested | Submit a result | `/submit` | Submit a result, compare with the model, save as pending for review |
+| | About and references | `/about` | Method credits, data sources, state of each part |
+
+The menu and theme are in `digco2/ui.py` and `.streamlit/config.toml`.
 
 ## Secrets (Streamlit Cloud → App settings → Secrets)
 
@@ -42,7 +51,7 @@ Claude Pro/Max subscriptions.
   `data/review/literature_candidates_2026-11-20.csv`). `Step4_ML_ready_dataset.xlsx` and the model still use the
   original 18 records: retraining on 24 was evaluated on 2026-11-23 and not adopted (see Model note).
 - `data/computational_data.csv`: one computed property per row (`Solute`, `Property`, `Value`, `Unit`, ...).
-  Download the template from the Computational Data page. Only published or public data belongs here.
+  Download the template from the Computed properties page. Only published or public data belongs here.
   The current rows are 0 K bulk formation energies from the Open Quantum Materials Database (CC BY 4.0),
   one convex-hull phase per element and property, each row linked to its OQMD entry:
   - `Oxide_formation_energy_per_O` (eV/O atom): oxygen-scavenging strength

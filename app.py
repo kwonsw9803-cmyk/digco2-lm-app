@@ -12,23 +12,24 @@ from digco2 import feedback as fb_mod
 from digco2 import literature_rag as rag_mod
 from digco2 import screening as scr_mod
 from digco2 import plots as plot_mod
+from digco2 import ui
 
 
 # ============================================================
 # DigCO2-LM Streamlit App
-# DigMethpy-style platform UI
+# Interface: digco2/ui.py (pages grouped by evidence level)
 # ============================================================
 
 st.set_page_config(
     page_title="DigCO2-LM",
-    page_icon="⚗️",
+    page_icon=str(Path(__file__).parent / "assets" / "mark.svg"),
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 base_dir = Path(__file__).parent
 
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.5.0"
 
 # ------------------------------------------------------------
 # File paths
@@ -49,113 +50,11 @@ curated_feedback_file = data_dir / "feedback" / "curated_feedback.csv"
 
 
 # ============================================================
-# CSS styling
+# Styling
 # ============================================================
 
-st.markdown(
-    """
-    <style>
-    .main {
-        background-color: #f8fafc;
-    }
-
-    .hero {
-        padding: 2.2rem 2rem;
-        border-radius: 24px;
-        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f766e 100%);
-        color: white;
-        margin-bottom: 1.4rem;
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.20);
-    }
-
-    .hero h1 {
-        font-size: 3.0rem;
-        margin-bottom: 0.4rem;
-    }
-
-    .hero p {
-        font-size: 1.05rem;
-        opacity: 0.95;
-        max-width: 900px;
-    }
-
-    .section-card {
-        background: white;
-        padding: 1.3rem;
-        border-radius: 20px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-        margin-bottom: 1rem;
-    }
-
-    .small-card {
-        background: white;
-        padding: 1rem;
-        border-radius: 18px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05);
-        min-height: 125px;
-    }
-
-    .module-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .muted {
-        color: #64748b;
-        font-size: 0.92rem;
-    }
-
-    .pill {
-        display: inline-block;
-        padding: 0.25rem 0.65rem;
-        border-radius: 999px;
-        background: #e0f2fe;
-        color: #075985;
-        font-weight: 600;
-        font-size: 0.82rem;
-        margin-right: 0.3rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .warning-box {
-        padding: 1rem;
-        border-radius: 16px;
-        background: #fff7ed;
-        border: 1px solid #fed7aa;
-        color: #9a3412;
-    }
-
-    .success-box {
-        padding: 1rem;
-        border-radius: 16px;
-        background: #ecfdf5;
-        border: 1px solid #a7f3d0;
-        color: #065f46;
-    }
-
-    .workflow-box {
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
-        border-radius: 18px;
-        padding: 1rem;
-        text-align: center;
-        box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05);
-        min-height: 105px;
-    }
-
-    .arrow {
-        text-align: center;
-        font-size: 2rem;
-        color: #1e40af;
-        padding-top: 1.8rem;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown(ui.CSS, unsafe_allow_html=True)
+st.logo(str(base_dir / "assets" / "logo.svg"), icon_image=str(base_dir / "assets" / "mark.svg"), size="large")
 
 
 # ============================================================
@@ -384,13 +283,8 @@ def render_model_performance():
 def render_footer():
     st.divider()
     st.caption(
-        f"DigCO2-LM v{APP_VERSION} · For research and educational purposes only. "
-        "Predictions are proof-of-concept screening suggestions from a small literature-derived dataset "
-        "and are not validated experimental results."
-    )
-    st.caption(
-        "Platform design inspired by DigMethpy: Cheng, Z. et al. AI Agent 2026, 2, 8. "
-        "[DOI: 10.20517/aiagent.2026.11](https://dx.doi.org/10.20517/aiagent.2026.11)"
+        f"DigCO2-LM {APP_VERSION}. For research and education. Modelled and AI-written content is not validated "
+        "by experiment. Sources and method credits are on the About and references page."
     )
 
 
@@ -577,204 +471,164 @@ Please include:
 
 
 # ============================================================
-# Sidebar navigation
+# Navigation
 # ============================================================
 
-st.sidebar.markdown("## ⚗️ DigCO2-LM")
-st.sidebar.caption("Digital CO₂ Conversion Platform")
-
-pages = [
-    "Home",
-    "Platform Workflow",
-    "Database",
-    "Descriptor Explorer",
-    "Descriptor Screening",
-    "Computational Data",
-    "ML Prediction",
-    "Recommendation Agent",
-    "Literature Agent",
-    "Gemini Agent Report",
-    "Live Claude Generator",
-    "Experimental Feedback",
-]
-if ADMIN_MODE:
-    # Server paths and API-key status are only shown when DIGCO2_ADMIN = "1" is set in secrets.
-    pages.append("File Status")
-
-page = st.sidebar.radio("Platform modules", pages)
-
-st.sidebar.divider()
-st.sidebar.markdown("### System status")
-st.sidebar.write(f"Database: {file_status(step3_file)}")
-st.sidebar.write(f"Descriptors: {file_status(descriptor_file)}")
-st.sidebar.write(f"ML model: {file_status(model_file)}")
-st.sidebar.write(f"Agent results: {file_status(step6_file)}")
-st.sidebar.write(f"LLM report: {file_status(step7b_file)}")
-st.sidebar.caption(f"Version {APP_VERSION}")
+# Server paths and API-key status are only shown when DIGCO2_ADMIN = "1" is set in secrets.
+page, PAGES = ui.build_navigation(admin=ADMIN_MODE)
 
 
 # ============================================================
-# Home page
+# Overview
 # ============================================================
 
-if page == "Home":
-    st.markdown(
-        """
-        <div class="hero">
-            <h1>DigCO2-LM</h1>
-            <p>
-            An AI-enabled digital catalysis platform for liquid-metal-mediated CO₂ conversion.
-            The platform integrates literature-mined databases, elemental descriptors,
-            machine-learning product classification, and LLM-written recommendation reports.
-            </p>
-            <span class="pill">Liquid metals</span>
-            <span class="pill">CO₂ conversion</span>
-            <span class="pill">Product classification</span>
-            <span class="pill">LLM agent</span>
-            <span class="pill">Experimental feedback</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+if page == "Overview":
+    ui.page_header("What has liquid metal been shown to make from CO₂?")
 
-    if step3_file.exists():
+    if not step3_file.exists():
+        st.warning("Database file is missing: Step3_LM_CO2_database_analysis.xlsx.")
+    else:
         df = load_excel_sheet(step3_file, "Analyzed_database")
-        n_records = len(df)
-        n_products = df["Product_class"].nunique() if "Product_class" in df.columns else "N/A"
-        n_reactions = df["Reaction_type_clean"].nunique() if "Reaction_type_clean" in df.columns else "N/A"
-        n_additives = df["Additive_metal_clean"].nunique() if "Additive_metal_clean" in df.columns else "N/A"
-
+        links = {}
+        if descriptor_file.exists():
+            core = load_excel_sheet(descriptor_file, "Core_database")
+            links = dict(zip(core["Record_ID"].astype(str), core["DOI_or_URL"].astype(str)))
         comp_df, _ = comp_mod.validate_computational(comp_mod.load_computational(computational_file))
         n_curated = len(fb_mod.load_feedback(curated_feedback_file))
+        years = pd.to_numeric(df["Year"], errors="coerce").dropna().astype(int)
+        span = f", from {years.min()} to {years.max()}" if not years.empty else ""
+        st.markdown(
+            f"**{len(df)} published records**{span}. Each number below is one record: select it to open the source. "
+            "Rows show how the reaction is driven, columns show the main product class."
+        )
+        st.markdown(ui.reaction_atlas(df, links), unsafe_allow_html=True)
+        single = ui.single_product_modes(df)
+        if single:
+            st.markdown(
+                "In these records, "
+                + " and ".join(
+                    f"{'both' if n == 2 else f'all {n}'} {mode} records report {product}" for mode, n, product in single
+                )
+                + "."
+            )
+        st.caption(
+            "An empty cell means no record in this database, not that the product is impossible. "
+            "Dashed numbers have no source link. The same records are listed as a table on the Records page."
+        )
 
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Literature records", n_records)
-        c2.metric("Computational records", len(comp_df))
-        c3.metric("Curated feedback", n_curated)
-        c4.metric("Product classes", n_products)
-        st.caption(f"{n_reactions} reaction modes · {n_additives} additive-metal entries")
-
-        st.divider()
-
-        c1, c2 = st.columns(2)
+        st.subheader("Continue from here", anchor=False)
+        c1, c2, c3 = st.columns(3)
         with c1:
-            if "Product_class" in df.columns:
-                st.subheader("Product landscape")
-                st.bar_chart(
-                    df["Product_class"].fillna("Not reported").value_counts(),
-                    horizontal=True,
-                    x_label="",
-                    y_label="Records",
-                )
-
+            st.page_link(PAGES["Literature Agent"], label="**Ask the records**")
+            st.markdown("Find which papers speak to a question about mechanism, conditions or product.")
         with c2:
-            if "Reaction_type_clean" in df.columns:
-                st.subheader("Reaction-mode landscape")
-                st.bar_chart(
-                    df["Reaction_type_clean"].fillna("Not reported").value_counts(),
-                    horizontal=True,
-                    x_label="",
-                    y_label="Records",
-                )
+            st.page_link(PAGES["Descriptor Screening"], label="**Look for an untested element**")
+            st.markdown("Compare elements nobody has reported with those that already gave a product.")
+        with c3:
+            st.page_link(PAGES["Experimental Feedback"], label="**Submit a result**")
+            st.markdown("Add a lab result. A maintainer reviews it before it joins the records.")
+        st.caption(
+            f"Besides these records: {len(comp_df)} computed values for {comp_df['Solute'].nunique()} elements, "
+            f"and {n_curated} reviewed lab results so far."
+        )
 
-    else:
-        st.warning("Database file is missing. Please upload or include Step3_LM_CO2_database_analysis.xlsx.")
 
-    st.markdown("## Platform modules")
-    modules = [
-        ("Database", "Curated literature-mined LM–CO₂ conversion records with source links."),
-        ("Descriptor Screening", "Place untested additive elements against known solid-carbon formers."),
-        ("Computational Data", "DFT / AIMD descriptors and leave-one-out descriptor regression."),
-        ("ML Classifier", "Preliminary product-class model, shown against a majority baseline."),
-        ("Literature Agent", "Ask questions answered only from the curated records, with citations."),
-        ("Experimental Feedback", "Submit results, compare with the model, and feed the database."),
+# ============================================================
+# Evidence levels
+# ============================================================
+
+elif page == "Evidence levels":
+    ui.page_header(
+        "Evidence levels",
+        lead="Each content page carries one of five labels. They say where its content comes from and what you may conclude from it.",
+    )
+    n_lit = len(load_excel_sheet(step3_file, "Analyzed_database")) if step3_file.exists() else 0
+    comp_df, _ = comp_mod.validate_computational(comp_mod.load_computational(computational_file))
+    n_cand = len(load_excel_sheet(step6_file, "All_candidate_predictions")) if step6_file.exists() else 0
+    n_rep = len(load_excel_sheet(step7b_file, "Gemini_candidate_reports")) if step7b_file.exists() else 0
+    n_curated = len(fb_mod.load_feedback(curated_feedback_file))
+    rows = [
+        ("Reported", f"{n_lit} published records, plus tabulated element properties",
+         "What a study observed, under its own conditions.",
+         "A rate or yield for other conditions. Records 19 to 24 were entered from abstracts only.",
+         ["Database", "Literature Agent", "Descriptor Explorer"]),
+        ("Computed", f"{len(comp_df)} values from the Open Quantum Materials Database",
+         "Relative bulk stability at 0 K, for example how strongly an element holds oxygen.",
+         "Behaviour in the molten alloy.",
+         ["Computational Data"]),
+        ("Modelled", f"1 classifier and {n_cand} scored candidates",
+         "Which experiments could be worth a look.",
+         "Which experiment will work. The classifier does not beat always answering 'solid carbon'.",
+         ["Descriptor Screening", "ML Prediction", "Recommendation Agent"]),
+        ("AI-written", f"{n_rep} stored reports",
+         "A readable draft to check against the papers.",
+         "A source. Do not cite it; cite the papers.",
+         ["Gemini Agent Report", "Live Claude Generator"]),
+        ("Tested", f"{n_curated} reviewed lab results",
+         "What a user measured, once reviewed.",
+         "Anything while it is still pending review.",
+         ["Experimental Feedback"]),
     ]
-    for start in range(0, len(modules), 3):
-        cols = st.columns(3)
-        for col, (name, text) in zip(cols, modules[start : start + 3]):
-            with col:
-                st.markdown(
-                    f'<div class="small-card"><div class="module-title">{name}</div><p class="muted">{text}</p></div>',
-                    unsafe_allow_html=True,
-                )
-        st.write("")
+    for level, amount, yes, no, keys in rows:
+        st.divider()
+        c1, c2, c3 = st.columns([1.1, 2.4, 1.1])
+        with c1:
+            st.subheader(level, anchor=False)
+            st.caption(amount)
+        with c2:
+            st.markdown(f"**You can read from it:** {yes}")
+            st.markdown(f"**You cannot read from it:** {no}")
+        with c3:
+            for k in keys:
+                st.page_link(PAGES[k])
 
 
 # ============================================================
-# Platform Workflow
+# About and references
 # ============================================================
 
-elif page == "Platform Workflow":
-    st.header("🧭 Platform Workflow")
-
+elif page == "About":
+    ui.page_header("About and references")
     st.markdown(
-        """
-        <div class="section-card">
-        <b>DigCO2-LM workflow</b> connects literature mining, database construction,
-        descriptor integration, machine learning, recommendation agents, and experimental feedback.
-        </div>
-        """,
-        unsafe_allow_html=True,
+        "DigCO2-LM collects published results on CO₂ conversion with liquid metals and keeps them apart from "
+        "anything computed, modelled or written by AI. It is for research and education."
     )
 
-    cols = st.columns([1, 0.25, 1, 0.25, 1, 0.25, 1])
-    with cols[0]:
-        st.markdown('<div class="workflow-box"><b>1. Literature</b><br>PDFs and papers on LM–CO₂ conversion</div>', unsafe_allow_html=True)
-    with cols[1]:
-        st.markdown('<div class="arrow">→</div>', unsafe_allow_html=True)
-    with cols[2]:
-        st.markdown('<div class="workflow-box"><b>2. Database</b><br>Reaction conditions, products, performance</div>', unsafe_allow_html=True)
-    with cols[3]:
-        st.markdown('<div class="arrow">→</div>', unsafe_allow_html=True)
-    with cols[4]:
-        st.markdown('<div class="workflow-box"><b>3. Descriptors</b><br>Oxygen affinity, reductant strength, element properties</div>', unsafe_allow_html=True)
-    with cols[5]:
-        st.markdown('<div class="arrow">→</div>', unsafe_allow_html=True)
-    with cols[6]:
-        st.markdown('<div class="workflow-box"><b>4. ML</b><br>Product-class prediction</div>', unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    cols = st.columns([1, 0.25, 1, 0.25, 1])
-    with cols[0]:
-        st.markdown('<div class="workflow-box"><b>5. Agent</b><br>Candidate generation and scoring</div>', unsafe_allow_html=True)
-    with cols[1]:
-        st.markdown('<div class="arrow">→</div>', unsafe_allow_html=True)
-    with cols[2]:
-        st.markdown('<div class="workflow-box"><b>6. LLM report</b><br>Experimental planning and interpretation</div>', unsafe_allow_html=True)
-    with cols[3]:
-        st.markdown('<div class="arrow">→</div>', unsafe_allow_html=True)
-    with cols[4]:
-        st.markdown('<div class="workflow-box"><b>7. Feedback</b><br>Validation data updates the database</div>', unsafe_allow_html=True)
-
-    st.divider()
-
-    st.subheader("Research positioning")
+    st.subheader("Method credits", anchor=False)
     st.markdown(
-        """
-        - **Data-centric:** structured literature data are treated as reusable catalyst-design assets.
-        - **Descriptor-aware:** elemental properties are connected to product trends.
-        - **Model-assisted:** ML is used as a proof-of-concept classifier, not a definitive predictor.
-        - **Agentic:** the recommendation agent combines ML scores, descriptor rules, and LLM reasoning.
-        - **Closed-loop:** future experimental results can be added back to improve the database and model.
-        """
+        "The interface and the evidence-level structure are our own. Three methods were informed by DigMethpy "
+        "(Cheng, Z. et al. *AI Agent* 2026, 2, 8, "
+        "[DOI 10.20517/aiagent.2026.11](https://doi.org/10.20517/aiagent.2026.11)):\n"
+        "- the two-descriptor element map (after its Fig. 4B)\n"
+        "- the regression of computed properties on elemental features (after its Fig. 4A)\n"
+        "- recording whether a submitted experiment agrees with the model (after its Step 3)\n\n"
+        "Version 0.4 and earlier also followed DigMethpy's overall platform design."
     )
 
-    st.subheader("Implementation status")
+    st.subheader("Data sources", anchor=False)
+    st.markdown(
+        "- Literature records: the papers and the thesis linked on the Records page.\n"
+        "- Computed values: Open Quantum Materials Database, CC BY 4.0. Saal et al., *JOM* 2013, 65, 1501, "
+        "[DOI 10.1007/s11837-013-0755-4](https://doi.org/10.1007/s11837-013-0755-4); Kirklin et al., "
+        "*npj Comput. Mater.* 2015, 1, 15010, "
+        "[DOI 10.1038/npjcompumats.2015.10](https://doi.org/10.1038/npjcompumats.2015.10)."
+    )
+
+    st.subheader("State of each part", anchor=False)
     st.dataframe(
         pd.DataFrame(
             [
-                ("Literature database", "Available", "24 curated records with source links"),
-                ("Element descriptors + screening map", "Available", "Similarity heuristic, not an activity model"),
-                ("Computational data (DFT/AIMD)", "Schema ready", "Records are added after review; session upload available"),
-                ("Descriptor regression", "Available when data exist", "Needs ≥5 solutes per property"),
-                ("Product classifier", "Preliminary", "Does not beat the majority-class baseline yet"),
-                ("Literature agent (RAG)", "Available", "Retrieves curated records; Claude answers optional (off until connected)"),
-                ("Experimental feedback", "Available", "Pending → maintainer review → curated"),
-                ("Automated literature mining", "Planned", "PDF parsing + LLM extraction with QC curation"),
-                ("ML interatomic potentials", "Planned", "For large-scale molten-surface sampling"),
+                ("Literature records", "Available", "24 curated records with source links"),
+                ("Element properties and map", "Available", "Similarity heuristic, not an activity model"),
+                ("Computed properties", "Available", "Public bulk data only; session upload available"),
+                ("Regression of computed properties", "Available when data exist", "Needs at least 5 solutes per property"),
+                ("Product classifier", "Preliminary", "Does not beat the majority-class baseline"),
+                ("Ask the records", "Available", "Retrieves records; Claude answers are off until connected"),
+                ("Experiment submissions", "Available", "Pending, then maintainer review, then curated"),
+                ("Automated literature mining", "Planned", "PDF parsing and extraction with quality checks"),
+                ("Machine-learned interatomic potentials", "Planned", "For sampling molten surfaces"),
             ],
-            columns=["Module", "Status", "Note"],
+            columns=["Part", "State", "Note"],
         ),
         width="stretch",
         hide_index=True,
@@ -786,7 +640,7 @@ elif page == "Platform Workflow":
 # ============================================================
 
 elif page == "Database":
-    st.header("🧾 Liquid-metal CO₂ Conversion Database")
+    ui.page_header("Records", "Reported", "Published liquid-metal CO₂ conversion results, one row per record.")
 
     if not step3_file.exists():
         st.warning("Step3 database file not found.")
@@ -887,7 +741,7 @@ elif page == "Database":
 # ============================================================
 
 elif page == "Descriptor Explorer":
-    st.header("🧬 Element Descriptor Explorer")
+    ui.page_header("Element properties", "Reported", "Tabulated properties of the elements used as additives or hosts.")
 
     if not descriptor_file.exists():
         st.warning("Descriptor file not found.")
@@ -929,7 +783,7 @@ elif page == "Descriptor Explorer":
 # ============================================================
 
 elif page == "ML Prediction":
-    st.header("🔮 Product-class Prediction")
+    ui.page_header("Product class", "Modelled", "A preliminary classifier trained on a small set of published records. Check its performance before using it.")
 
     if not model_file.exists():
         st.warning("Model file not found. product_classifier_random_forest.pkl is required.")
@@ -943,16 +797,6 @@ elif page == "ML Prediction":
         training_columns = bundle["training_columns"]
 
         desc = load_excel_sheet(descriptor_file, "Element_descriptors")
-
-        st.markdown(
-            """
-            <div class="warning-box">
-            This model is trained on a small literature-derived dataset.
-            Predictions should be interpreted as proof-of-concept screening suggestions.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
 
         render_model_performance()
 
@@ -1024,7 +868,7 @@ elif page == "ML Prediction":
 # ============================================================
 
 elif page == "Recommendation Agent":
-    st.header("🧠 Recommendation Agent")
+    ui.page_header("Candidates", "Modelled", "Combinations scored by the classifier and simple rules.")
 
     if not step6_file.exists():
         st.warning("Step6_agent_recommendation_results.xlsx not found.")
@@ -1144,7 +988,7 @@ elif page == "Recommendation Agent":
 # ============================================================
 
 elif page == "Gemini Agent Report":
-    st.header("📝 Gemini Agent Report")
+    ui.page_header("Stored reports", "AI-written")
 
     if not step7b_file.exists():
         st.warning("Step7b_Gemini_LLM_agent_report.xlsx not found.")
@@ -1176,19 +1020,12 @@ elif page == "Gemini Agent Report":
 # ============================================================
 
 elif page == "Live Claude Generator":
-    st.header("✨ Live Claude Generator")
+    ui.page_header("New report", "AI-written", "Draft a report for one candidate with Claude.")
 
     if CLAUDE.problem():
         st.info(CLAUDE_NOT_CONNECTED + "You can still preview the prompt below.")
     else:
-        st.markdown(
-            """
-            <div class="warning-box">
-            This module calls the Claude API in real time. Each report uses paid API credit.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.info("Each report calls the Claude API and uses paid API credit.")
 
     if not step6_file.exists():
         st.warning("Step6 recommendation result file not found.")
@@ -1227,7 +1064,7 @@ elif page == "Live Claude Generator":
                 remaining = max(LIVE_CLAUDE_LIMIT_PER_SESSION - st.session_state.get("live_claude_calls", 0), 0)
                 st.caption(
                     f"Live Claude calls left in this session: {remaining} / {LIVE_CLAUDE_LIMIT_PER_SESSION} "
-                    "(shared with the Literature Agent)"
+                    "(shared with Ask the records)"
                 )
                 if blocked:
                     st.warning(blocked)
@@ -1247,11 +1084,12 @@ elif page == "Live Claude Generator":
 # ============================================================
 
 elif page == "Descriptor Screening":
-    st.header("🗺️ Descriptor Screening")
+    ui.page_header("Element map", "Modelled")
     st.markdown(
         "Every additive element is placed on a map of two elemental descriptors and tagged with what "
         "the literature database reports for it. Untested elements are ranked by how close they are, "
-        "in standardized descriptor space, to elements that already gave the target product."
+        "in standardized descriptor space, to elements that already gave the target product. "
+        "(Map after Cheng et al. 2026, see About and references.)"
     )
 
     if not (descriptor_file.exists() and step3_file.exists()):
@@ -1276,7 +1114,7 @@ elif page == "Descriptor Screening":
 
         evidence = scr_mod.element_evidence(analyzed, desc, target)
         map_df = scr_mod.screening_map_data(desc, evidence, x, y)
-        st.altair_chart(plot_mod.screening_map(map_df, label(x), label(y)), width="stretch")
+        st.altair_chart(plot_mod.screening_map(map_df, label(x), label(y), ui.chart_ink()), width="stretch")
         n_untested = int((map_df["Status"] == scr_mod.STATUS_UNTESTED).sum())
         st.caption(f"{len(map_df)} elements plotted · {n_untested} not yet tested for '{target}'")
         dropped = sorted(set(desc["Element"]) - set(map_df["Element"]))
@@ -1320,7 +1158,7 @@ elif page == "Descriptor Screening":
 # ============================================================
 
 elif page == "Computational Data":
-    st.header("🧮 Computational Data")
+    ui.page_header("Computed properties", "Computed")
     st.markdown(
         "First-principles descriptors (Bader charge, adsorption energies, barriers, diffusivity) for solute "
         "atoms in liquid metals. Records are stored one property per row in `data/computational_data.csv`."
@@ -1378,7 +1216,7 @@ elif page == "Computational Data":
 
         st.subheader("Descriptor regression")
         st.caption(
-            "Predicts a computed solute property from elemental features (DigMethpy Fig. 4A approach). "
+            "Predicts a computed solute property from elemental features (approach after Cheng et al. 2026, see About and references). "
             "Leave-one-out CV over solutes, compared with predicting the mean."
         )
         desc = load_excel_sheet(descriptor_file, "Element_descriptors")
@@ -1420,7 +1258,7 @@ elif page == "Computational Data":
                 st.warning("The model does not beat predicting the mean. More solutes or different features are needed.")
             st.markdown(f"**{prop}: computed vs LOOCV prediction** ({model_name}, {len(result)} solutes)")
             x_title = f"Computed {prop} ({unit})" if unit else f"Computed {prop}"
-            st.altair_chart(plot_mod.parity_plot(result, x_title), width="stretch")
+            st.altair_chart(plot_mod.parity_plot(result, x_title, ui.chart_ink()), width="stretch")
             st.dataframe(result, width="stretch", hide_index=True)
 
 
@@ -1429,9 +1267,9 @@ elif page == "Computational Data":
 # ============================================================
 
 elif page == "Literature Agent":
-    st.header("📚 Literature Agent")
+    ui.page_header("Ask the records", "Reported")
     st.markdown(
-        "Ask about mechanisms, conditions or products. The agent retrieves the most relevant curated records "
+        "Ask about mechanisms, conditions or products. The page retrieves the most relevant curated records "
         "and, when Claude is connected, writes an answer that may only use those records and cites them as [R#]."
     )
 
@@ -1487,10 +1325,10 @@ elif page == "Literature Agent":
 # ============================================================
 
 elif page == "Experimental Feedback":
-    st.header("🔁 Experimental Feedback")
+    ui.page_header("Submit a result", "Tested")
     st.markdown(
         "Report an experimental result. The platform compares it with the current model "
-        "(**agreement** validates the prediction, a **discrepancy** is flagged for analysis), saves it as "
+        "(**agreement** or **discrepancy**; neither proves the result), saves it as "
         "*pending*, and a maintainer moves reviewed entries into the database."
     )
 
@@ -1648,7 +1486,7 @@ elif page == "Experimental Feedback":
 # ============================================================
 
 elif page == "File Status":
-    st.header("📁 File Status")
+    ui.page_header("File status")
 
     files = {
         "app.py": base_dir / "app.py",
